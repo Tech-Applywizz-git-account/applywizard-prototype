@@ -1,4 +1,4 @@
-import type { ComponentType, ReactNode } from 'react';
+import { useLayoutEffect, useRef, type ComponentType, type ReactNode } from 'react';
 import {
   ArrowLeft,
   Bell,
@@ -19,6 +19,9 @@ import {
 } from 'lucide-react';
 
 import { useNav } from './nav';
+import { useLanguage } from './language';
+import { useTheme } from './theme';
+import { scrollMemory } from './scrollMemory';
 
 /* ------------------------------------------------------------------ chrome */
 
@@ -56,7 +59,12 @@ export function AppBar({
           </button>
         ) : null}
         {menu ? (
-          <button className="iconbtn" type="button" aria-label="Menu" onClick={() => nav.open('drawer')}>
+          <button
+            className="iconbtn"
+            type="button"
+            aria-label="Menu"
+            onClick={() => nav.open('drawer')}
+          >
             <Menu size={22} />
           </button>
         ) : null}
@@ -70,13 +78,25 @@ export function AppBar({
           </button>
         ) : null}
         {bell ? (
-          <button className="iconbtn" type="button" onClick={() => onBell && nav.push(onBell)} aria-label="Notifications">
+          <button
+            className="iconbtn"
+            type="button"
+            onClick={() => {
+              if (onBell) nav.push(onBell);
+            }}
+            aria-label="Notifications"
+          >
             <Bell size={20} />
             <i className="dot-badge" />
           </button>
         ) : null}
         {filter ? (
-          <button className="iconbtn" type="button" aria-label="Filters" onClick={() => nav.open('filters')}>
+          <button
+            className="iconbtn"
+            type="button"
+            aria-label="Filters"
+            onClick={() => nav.open('filters')}
+          >
             <Filter size={20} />
           </button>
         ) : null}
@@ -112,14 +132,32 @@ export function PlainBar({ title }: { title?: string }) {
       <button className="iconbtn" onClick={nav.back} aria-label="Back">
         <ArrowLeft size={22} />
       </button>
-      {title ? <span className="count" style={{ flex: 1, textAlign: 'left', fontSize: 16, fontWeight: 700, color: '#111827' }}>{title}</span> : null}
+      {title ? <span className="count" style={{ flex: 1, textAlign: 'left', fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>{title}</span> : null}
     </div>
   );
 }
 
 export function Body({ children, pad = 20 }: { children: ReactNode; pad?: number }) {
+  const nav = useNav();
+  const ref = useRef<HTMLDivElement>(null);
+  const key = nav.current.id;
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.scrollTop = scrollMemory.get(key);
+    return () => {
+      scrollMemory.set(key, el.scrollTop);
+    };
+  }, [key]);
+
   return (
-    <div className="scroll" style={{ padding: `0 ${pad}px 24px` }}>
+    <div
+      ref={ref}
+      className="scroll"
+      style={{ padding: `0 ${pad}px 24px` }}
+      onScroll={(e) => scrollMemory.set(key, e.currentTarget.scrollTop)}
+    >
       {children}
     </div>
   );
@@ -131,18 +169,19 @@ export function FootBar({ children }: { children: ReactNode }) {
 
 /* ------------------------------------------------------------------ tabs */
 
-const seekerTabs = [
-  { id: 'js-jobs', label: 'All jobs', Icon: Briefcase },
-  { id: 'js-applied', label: 'Applied', Icon: FileText },
-  { id: 'js-saved', label: 'Saved', Icon: Bookmark },
-  { id: 'js-profile', label: 'Profile', Icon: UserCircle2 },
-];
 
 export function SeekerTabs({ active, locked }: { active: string; locked?: boolean }) {
   const nav = useNav();
+  const { t } = useLanguage();
+  const tabs = [
+    { id: 'js-jobs', label: t('allJobs'), Icon: Briefcase },
+    { id: 'js-applied', label: t('applied'), Icon: FileText },
+    { id: 'js-saved', label: t('saved'), Icon: Bookmark },
+    { id: 'js-profile', label: t('profile'), Icon: UserCircle2 },
+  ];
   return (
     <div className="tabbar">
-      {seekerTabs.map(({ id, label, Icon }) => {
+      {tabs.map(({ id, label, Icon }) => {
         const on = id === active;
         return (
           <button
@@ -296,37 +335,57 @@ export function TextLink({ children, to, accent, action = 'push' }: { children: 
 
 export function MenuRow({
   icon: Icon,
-  tint,
+  tint = 'transparent',
   color,
   title,
   sub,
+  value,
+  right,
   to,
   danger,
   action = 'push',
+  onClick,
 }: {
-  icon: ComponentType<{ size?: number; color?: string }>;
-  tint: string;
-  color: string;
+  icon?: ComponentType<{ size?: number; color?: string }>;
+  tint?: string;
+  color?: string;
   title: string;
   sub?: string;
+  value?: string;
+  right?: ReactNode;
   to?: string;
   danger?: boolean;
   action?: 'push' | 'reset';
+  onClick?: () => void;
 }) {
   const nav = useNav();
+  const { mode } = useTheme();
+  // Resolve icon color: explicit prop > danger red > theme-aware default
+  const iconColor = danger ? '#ef4444' : color ?? (mode === 'dark' ? '#d1d5db' : '#111827');
   return (
     <button
+      type="button"
       className={danger ? 'mrow danger' : 'mrow'}
-      onClick={() => to && (action === 'reset' ? nav.reset(to) : nav.push(to))}
+      onClick={() => {
+        if (onClick) onClick();
+        else if (to) (action === 'reset' ? nav.reset(to) : nav.push(to));
+      }}
     >
-      <span className="ibox" style={{ background: tint }}>
-        <Icon size={20} color={color} />
-      </span>
+      {Icon && (
+        <span className="ibox" style={{ background: tint }}>
+          <Icon size={20} color={iconColor} />
+        </span>
+      )}
       <span className="body">
-        <strong>{title}</strong>
+        <strong style={danger ? { color: '#ef4444' } : undefined}>{title}</strong>
         {sub ? <span>{sub}</span> : null}
       </span>
-      <ChevronRight size={20} className="chev" />
+      {value ? (
+        <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--muted-2)', marginRight: right ? 0 : 4 }}>
+          {value}
+        </span>
+      ) : null}
+      {right !== undefined ? right : <ChevronRight size={18} className="chev" />}
     </button>
   );
 }
@@ -370,11 +429,16 @@ export function Choice({
   );
 }
 
-export function Chips({ items, selected = [], scroll }: { items: string[]; selected?: string[]; scroll?: boolean }) {
+export function Chips({ items, selected = [], scroll, onSelect }: { items: string[]; selected?: string[]; scroll?: boolean; onSelect?: (item: string) => void }) {
   return (
     <div className={scroll ? 'chips scrollx' : 'chips'}>
       {items.map((item) => (
-        <button key={item} className={selected.includes(item) ? 'chip on' : 'chip'}>
+        <button
+          key={item}
+          type="button"
+          className={selected.includes(item) ? 'chip on' : 'chip'}
+          onClick={() => onSelect?.(item)}
+        >
           {item}
         </button>
       ))}
@@ -382,11 +446,25 @@ export function Chips({ items, selected = [], scroll }: { items: string[]; selec
   );
 }
 
-export function SearchBox({ placeholder, band = true }: { placeholder: string; band?: boolean }) {
+export function SearchBox({
+  placeholder,
+  value,
+  onChange,
+  band = true,
+}: {
+  placeholder: string;
+  value?: string;
+  onChange?: (val: string) => void;
+  band?: boolean;
+}) {
   const box = (
     <div className="searchbox">
       <Search size={18} />
-      <input placeholder={placeholder} />
+      <input
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange?.(e.target.value)}
+      />
     </div>
   );
   return band ? <div className="searchband">{box}</div> : box;
@@ -413,7 +491,8 @@ export function Pill({ children, bg, color }: { children: ReactNode; bg: string;
 
 /* ------------------------------------------------------------------ job card */
 
-type CardJob = {
+export type CardJob = {
+  id?: string;
   title: string;
   company: string;
   initials: string;
@@ -425,6 +504,8 @@ type CardJob = {
   salary: string;
   posted: string;
   match: number;
+  applicationType?: 'QUICK_APPLY' | 'APPLY_NOW' | string;
+  applyUrl?: string;
 };
 
 /** JobCard.tsx getJobTitleTypography — the title shrinks as it gets longer. */
@@ -443,19 +524,36 @@ export function JobCard({
   saved,
   applied,
   guest,
+  onApply,
+  onToggleSave,
+  onOpen,
 }: {
   job: CardJob;
   to?: string;
   saved?: boolean;
   applied?: boolean;
   guest?: boolean;
+  onApply?: (job: CardJob) => void;
+  onToggleSave?: (job: CardJob) => void;
+  onOpen?: (job: CardJob) => void;
 }) {
   const nav = useNav();
-  const applyLabel = applied ? 'Applied' : guest ? 'Sign in to apply' : 'Quick Apply';
+  const isApplyNow = job.applicationType === 'APPLY_NOW';
+  const applyLabel = applied
+    ? 'Applied'
+    : isApplyNow
+    ? 'Apply Now'
+    : 'Quick Apply';
+
   return (
     <div className="jobcard">
-      <button style={{ width: '100%' }} onClick={() => to && nav.push(to)}>
-        <div className="top">
+      <button
+        style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+        onClick={() => {
+          if (onOpen) onOpen(job);
+          else if (to) nav.push(to);
+        }}
+      >        <div className="top">
           <span className="logo" style={{ background: job.logoColor }}>
             {job.initials}
           </span>
@@ -487,15 +585,31 @@ export function JobCard({
       <div className="actions">
         <button
           className={applied ? 'apply done' : 'apply'}
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             if (applied) return;
-            nav.push(guest ? 'js-login' : 'js-apply');
+            if (guest) {
+              nav.push('js-login');
+            } else if (onApply) {
+              onApply(job);
+            } else {
+              nav.push(isApplyNow ? 'js-apply-now' : 'js-apply');
+            }
           }}
         >
           {applied ? null : <Sparkles size={16} />}
           {applyLabel}
         </button>
-        <button className={saved ? 'save on' : 'save'} aria-label="Save job">
+        <button
+          className={saved ? 'save on' : 'save'}
+          aria-label="Save job"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onToggleSave) {
+              onToggleSave(job);
+            }
+          }}
+        >
           <Bookmark size={18} fill={saved ? '#4432ff' : 'transparent'} />
         </button>
       </div>

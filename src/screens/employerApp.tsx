@@ -68,7 +68,7 @@ function HrHeader() {
       </button>
       <span className="spacer" />
       <button className="iconbtn" onClick={() => nav.push('hr-settings-notifications')}>
-        <Bell size={22} color="#374151" />
+        <Bell size={22} color="var(--text-2)" />
         <i className="dot-badge" />
       </button>
     </div>
@@ -149,7 +149,7 @@ export function HrHome() {
               }}
               onClick={() => nav.push('hr-candidate')}
             >
-              <span style={{ width: 56, color: '#9ca3af', fontSize: 12, fontWeight: 700 }}>{item.time}</span>
+              <span style={{ width: 56, color: 'var(--muted)', fontSize: 12, fontWeight: 700 }}>{item.time}</span>
               <Avatar initials={item.initials} color={item.color} size={40} />
               <span style={{ flex: 1 }}>
                 <strong style={{ display: 'block', fontSize: 14, fontWeight: 700 }}>{item.name}</strong>
@@ -177,7 +177,7 @@ export function HrHome() {
         <div className="rows">
           <MenuRow icon={LayoutGrid} tint="#ede9fe" color="#7c3aed" title="Pipeline" sub="Applicants grouped by stage" to="hr-pipeline" />
           <MenuRow icon={Sparkles} tint="#dbeafe" color="#2563eb" title="Analytics" sub="Open jobs, applicants, average match" to="hr-analytics" />
-          <MenuRow icon={Monitor} tint="#f3f4f6" color="#6b7280" title="Open on desktop" sub="Bulk actions and exports" to="hr-desktop" />
+          <MenuRow icon={Monitor} tint="#f3f4f6" color="var(--muted-2)" title="Open on desktop" sub="Bulk actions and exports" to="hr-desktop" />
         </div>
       </div>
       <HrTabs active="hr-home" />
@@ -313,7 +313,7 @@ export function HrCandidates() {
                 <span className="pill" style={{ background: tint.bg, color: tint.color }}>
                   {person.stage}
                 </span>
-                <ChevronRight size={18} color="#9ca3af" />
+                <ChevronRight size={18} color="var(--muted)" />
               </span>
             </button>
           );
@@ -480,7 +480,7 @@ export function HrJob() {
         })}
 
         <p className="label-xs">Job description</p>
-        <p style={{ margin: 0, color: '#374151', fontSize: 14, lineHeight: '23px' }}>{job.about}</p>
+        <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 14, lineHeight: '23px' }}>{job.about}</p>
       </div>
     </>
   );
@@ -599,9 +599,9 @@ export function HrCandidate() {
         <p className="label-xs">Screening answers</p>
         <div className="card">
           <p style={{ margin: 0, fontSize: 13, fontWeight: 700 }}>Years of Tally Prime experience?</p>
-          <p style={{ margin: '4px 0 12px', fontSize: 13, color: '#374151' }}>2 years</p>
+          <p style={{ margin: '4px 0 12px', fontSize: 13, color: 'var(--text-2)' }}>2 years</p>
           <p style={{ margin: 0, fontSize: 13, fontWeight: 700 }}>Can you join within 15 days?</p>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: '#374151' }}>Yes</p>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-2)' }}>Yes</p>
         </div>
 
         <p className="label-xs">Documents verified</p>
@@ -643,7 +643,7 @@ export function HrCompany() {
               </p>
             </div>
           </div>
-          <p style={{ margin: '14px 0 0', fontSize: 14, color: '#374151', lineHeight: '22px' }}>{employer.about}</p>
+          <p style={{ margin: '14px 0 0', fontSize: 14, color: 'var(--text-2)', lineHeight: '22px' }}>{employer.about}</p>
         </div>
 
         <p className="label-xs">Details candidates see</p>
@@ -705,7 +705,7 @@ export function HrPipeline() {
                     <strong style={{ display: 'block', fontSize: 14 }}>{candidates[index].name}</strong>
                     <span className="muted">{candidates[index].role}</span>
                   </span>
-                  <ChevronRight size={18} color="#9ca3af" />
+                  <ChevronRight size={18} color="var(--muted)" />
                 </button>
               ) : null}
             </div>
@@ -915,11 +915,11 @@ export function HrSecurity() {
         <p className="label-xs">Sessions</p>
         <div className="rows">
           <MenuRow icon={ShieldCheck} tint="#dcfce7" color="#16a34a" title="This device" sub="iPhone · Hyderabad · active now" />
-          <MenuRow icon={ShieldCheck} tint="#f3f4f6" color="#6b7280" title="Chrome on Windows" sub="Hyderabad · 3 days ago" />
+          <MenuRow icon={ShieldCheck} tint="#f3f4f6" color="var(--muted-2)" title="Chrome on Windows" sub="Hyderabad · 3 days ago" />
         </div>
         <p className="label-xs">Data</p>
         <div className="card">
-          <p style={{ margin: 0, fontSize: 13, color: '#374151', lineHeight: '20px' }}>
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: '20px' }}>
             Candidate data is retained for 12 months after a role closes, then deleted automatically.
           </p>
         </div>
@@ -949,7 +949,7 @@ export function HrAppearance() {
         <div className="card">
           <div className="row between" style={{ marginBottom: 12 }}>
             <strong style={{ fontSize: 14 }}>Hiring snapshot</strong>
-            <Palette size={16} color="#9ca3af" />
+            <Palette size={16} color="var(--muted)" />
           </div>
           <div className="stats" style={{ marginBottom: 0 }}>
             <div className="stat" style={{ padding: 10 }}>
@@ -992,12 +992,12 @@ export function HrHelp() {
         <p className="label-xs">Contact</p>
         <div className="rows">
           <MenuRow icon={Mail} tint="#e0e7ff" color="#6366f1" title="Email support" sub="employers@applywizard.ai" />
-          <MenuRow icon={Monitor} tint="#f3f4f6" color="#6b7280" title="Open desktop workspace" to="hr-desktop" />
+          <MenuRow icon={Monitor} tint="#f3f4f6" color="var(--muted-2)" title="Open desktop workspace" to="hr-desktop" />
         </div>
         <p className="label-xs">Legal</p>
         <div className="rows">
-          <MenuRow icon={ShieldCheck} tint="#f3f4f6" color="#6b7280" title="Employer terms" />
-          <MenuRow icon={ShieldCheck} tint="#f3f4f6" color="#6b7280" title="Privacy policy" />
+          <MenuRow icon={ShieldCheck} tint="#f3f4f6" color="var(--muted-2)" title="Employer terms" />
+          <MenuRow icon={ShieldCheck} tint="#f3f4f6" color="var(--muted-2)" title="Privacy policy" />
         </div>
       </Body>
     </>

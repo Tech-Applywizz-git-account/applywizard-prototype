@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Eye, Mail, ShieldCheck, Sparkles, Upload, X } from 'lucide-react';
 
 import {
@@ -13,7 +14,7 @@ import {
   TextLink,
   WizardBar,
 } from '../kit';
-import { filterCategories, seeker } from '../data';
+import { accountDeletionState, accountState, filterCategories, seeker } from '../data';
 import { useNav } from '../nav';
 
 function GoogleMark() {
@@ -50,11 +51,70 @@ function AppleMark() {
 /** app/index.tsx — the login screen. */
 export function Login() {
   const nav = useNav();
+
+  const [showNotification, setShowNotification] = useState(
+    Boolean(accountState.deactivated || accountState.deletionRequested || accountDeletionState.requested)
+  );
+
+  useEffect(() => {
+    if (accountState.deactivated || accountState.deletionRequested || accountDeletionState.requested) {
+      setShowNotification(true);
+      const timer = setTimeout(() => {
+        setShowNotification(false);
+        accountState.deactivated = false;
+        accountState.deletionRequested = false;
+        accountDeletionState.requested = false;
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const enterApp = () => {
+    nav.reset('js-jobs');
+  };
+
   return (
     <div className="scroll" style={{ padding: '20px 24px 24px' }}>
+      {showNotification && accountState.deactivated && (
+        <div
+          style={{
+            background: '#e6f4ea',
+            border: '1px solid #a7f3d0',
+            borderLeft: '5px solid #059669',
+            borderRadius: 16,
+            padding: '14px 16px',
+            marginBottom: 20,
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+            transition: 'opacity 0.3s ease',
+          }}
+        >
+          <p style={{ color: '#047857', fontWeight: 600, fontSize: 14, lineHeight: '20px', margin: 0 }}>
+            Your account has been deactivated. You can log in anytime to reactivate your account.
+          </p>
+        </div>
+      )}
+
+      {showNotification && !accountState.deactivated && (accountState.deletionRequested || accountDeletionState.requested) && (
+        <div
+          style={{
+            background: '#e6f4ea',
+            border: '1px solid #a7f3d0',
+            borderLeft: '5px solid #059669',
+            borderRadius: 16,
+            padding: '14px 16px',
+            marginBottom: 20,
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+            transition: 'opacity 0.3s ease',
+          }}
+        >
+          <p style={{ color: '#047857', fontWeight: 600, fontSize: 14, lineHeight: '20px', margin: 0 }}>
+            Your account deletion has been requested. Your account and personal data will be permanently deleted within 14 days.
+          </p>
+        </div>
+      )}
       <img src="/logo.png" alt="Applywizard" style={{ width: 64, height: 64, borderRadius: 16, marginBottom: 16 }} />
       <h1 className="display lg">Welcome back</h1>
-      <p style={{ margin: '6px 0 20px', color: '#6b7280', fontSize: 15, lineHeight: '22px' }}>
+      <p style={{ margin: '6px 0 20px', color: 'var(--muted-2)', fontSize: 15, lineHeight: '22px' }}>
         Log in to your Applywizard account.
       </p>
 
@@ -74,9 +134,9 @@ export function Login() {
         Forgot password?
       </button>
 
-      <Primary to="js-jobs" action="reset">
+      <button className="btn" type="button" onClick={enterApp}>
         Log in
-      </Primary>
+      </button>
 
       <div className="divider-or">
         <i />
@@ -85,10 +145,10 @@ export function Login() {
       </div>
 
       <div className="gap" style={{ gap: 10 }}>
-        <button className="btn dark" type="button" onClick={() => nav.reset('js-jobs')}>
+        <button className="btn dark" type="button" onClick={enterApp}>
           <AppleMark /> Sign in with Apple
         </button>
-        <button className="btn ghost" type="button" onClick={() => nav.reset('js-jobs')}>
+        <button className="btn ghost" type="button" onClick={enterApp}>
           <GoogleMark /> Google
         </button>
       </div>
@@ -254,21 +314,27 @@ export function SignupOtp() {
 }
 
 export function SignupPassword() {
+  const eye = (
+    <span className="eye">
+      <Eye size={20} strokeWidth={2.2} />
+    </span>
+  );
+
   return (
     <>
       <PlainBar />
       <Body>
         <h1 className="display">Set your password</h1>
         <p className="lede">Create a password so you can sign in again using your email.</p>
-        <Field label="Password" value="••••••••••" placeholder="Minimum 8 characters" />
-        <Field label="Confirm password" value="••••••••••" placeholder="Enter password again" />
+        <Field label="Password" value="••••••••••" placeholder="Minimum 8 characters" right={eye} />
+        <Field label="Confirm password" value="••••••••••" placeholder="Enter password again" right={eye} />
         <div className="card" style={{ marginTop: 6 }}>
           {['At least 8 characters', 'One uppercase letter', 'One number'].map((rule) => (
             <div key={rule} className="row" style={{ padding: '5px 0' }}>
               <span className="checkbox on">
                 <Sparkles size={12} />
               </span>
-              <span style={{ fontSize: 13, color: '#374151' }}>{rule}</span>
+              <span style={{ fontSize: 13, color: 'var(--text-2)' }}>{rule}</span>
             </div>
           ))}
         </div>

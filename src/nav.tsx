@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 
+import { scrollMemory } from './scrollMemory';
+
 export type Transition = 'push' | 'fade';
 export type OverlayId = 'filters' | 'drawer' | null;
 
@@ -37,11 +39,16 @@ export function NavProvider({ initial, children }: { initial: string; children: 
 
   const swap = useCallback((id: string) => {
     setOverlay(null);
-    setStack((current) => [...current.slice(0, -1), { id, transition: 'fade' }]);
+    setStack((current) => {
+      const leaving = current[current.length - 1];
+      if (leaving) scrollMemory.clear(leaving.id);
+      return [...current.slice(0, -1), { id, transition: 'fade' }];
+    });
   }, []);
 
   const reset = useCallback((id: string) => {
     setOverlay(null);
+    scrollMemory.clearAll();
     setStack([{ id, transition: 'fade' }]);
   }, []);
 
@@ -50,7 +57,12 @@ export function NavProvider({ initial, children }: { initial: string; children: 
       setOverlay(null);
       return;
     }
-    setStack((current) => (current.length > 1 ? current.slice(0, -1) : current));
+    setStack((current) => {
+      if (current.length <= 1) return current;
+      const leaving = current[current.length - 1];
+      scrollMemory.clear(leaving.id);
+      return current.slice(0, -1);
+    });
   }, [overlay]);
 
   const value = useMemo<Nav>(

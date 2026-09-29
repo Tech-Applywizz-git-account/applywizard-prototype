@@ -3,6 +3,7 @@ import { Signal, Wifi } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import { NavProvider, useNav } from './nav';
+import { useTheme } from './theme';
 import { FiltersSheet, JobseekerDrawer } from './overlays';
 import { indexScreens, type ScreenDef } from './registry';
 
@@ -45,11 +46,12 @@ function useDeviceScale() {
 
 function Phone({ screens }: { screens: Map<string, ScreenDef> }) {
   const nav = useNav();
+  const { mode } = useTheme();
   const screen = screens.get(nav.current.id) ?? [...screens.values()][0];
 
   return (
     <div className="device">
-      <div className="device-screen">
+      <div className="device-screen" data-theme={mode}>
         <StatusBar />
         <div className="stack">
           <div className={`page ${nav.current.transition}`} key={nav.current.id + nav.depth}>
