@@ -53,16 +53,16 @@ export function HrAccount() {
       <div className="scroll" style={{ padding: 24 }}>
         <div className="stack-20">
           <div className="stack-8">
-            <span style={{ fontSize: 13, color: '#374151', fontWeight: 600 }}>Full name</span>
+            <span style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 600 }}>Full name</span>
             <input className="input-50" defaultValue={employer.name} placeholder="Your name" />
           </div>
           <div className="stack-8">
-            <span style={{ fontSize: 13, color: '#374151', fontWeight: 600 }}>Work email</span>
+            <span style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 600 }}>Work email</span>
             <input className="input-50" defaultValue={employer.email} placeholder="you@company.com" />
             <span className="muted">Personal addresses like gmail.com are blocked for workspaces.</span>
           </div>
           <div className="stack-8">
-            <span style={{ fontSize: 13, color: '#374151', fontWeight: 600 }}>Password</span>
+            <span style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 600 }}>Password</span>
             <input className="input-50" defaultValue="••••••••••" placeholder="Minimum 8 characters" />
           </div>
           <Primary to="hr-otp">Create workspace</Primary>
@@ -290,7 +290,7 @@ export function HrVerifyCompany() {
         </div>
 
         <p className="muted" style={{ marginTop: 16 }}>
-          <b style={{ color: '#111827' }}>Submit at least one</b> — we recommend it. Verified employers get stronger
+          <b style={{ color: 'var(--text)' }}>Submit at least one</b> — we recommend it. Verified employers get stronger
           trust signals and better ranking after review.
         </p>
       </div>
@@ -316,10 +316,10 @@ export function HrVerifySmall() {
 
         <div className="stack-16" style={{ marginTop: 20 }}>
           <div className="verifycard">
-            <strong style={{ fontSize: 14, color: '#111827' }}>Udyam (MSME) registration no.</strong>
+            <strong style={{ fontSize: 14, color: 'var(--text)' }}>Udyam (MSME) registration no.</strong>
             <input className="input-50" defaultValue="UDYAM-TS-09-0001234" placeholder="UDYAM-TS-09-0001234" />
-            <span style={{ fontSize: 13, color: '#9ca3af' }}>
-              Submitted for review against the <b style={{ color: '#111827' }}>Udyam / MSME registry</b>
+            <span style={{ fontSize: 13, color: 'var(--muted)' }}>
+              Submitted for review against the <b style={{ color: 'var(--text)' }}>Udyam / MSME registry</b>
             </span>
           </div>
 
@@ -344,7 +344,7 @@ export function HrVerifySmall() {
               </span>
             </div>
             <div className="two">
-              <button className="btn thin" style={{ color: '#374151', borderColor: '#e5e7eb' }}>
+              <button className="btn thin" style={{ color: 'var(--text-2)', borderColor: '#e5e7eb' }}>
                 Change Document
               </button>
               <button className="btn thin" style={{ color: '#166534', borderColor: '#bbf7d0' }}>
@@ -419,7 +419,7 @@ export function HrDigilockerAuth() {
       </div>
       <div className="scroll" style={{ padding: 24 }}>
         <h1 style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 800 }}>ApplyWizard wants access to:</h1>
-        <p style={{ margin: '0 0 24px', fontSize: 16, color: '#374151', lineHeight: '24px' }}>
+        <p style={{ margin: '0 0 24px', fontSize: 16, color: 'var(--text-2)', lineHeight: '24px' }}>
           You can revoke any time from your DigiLocker account.
         </p>
         <div className="stack-16">
@@ -473,7 +473,7 @@ export function HrDigilockerLoading() {
       <div className="center-screen">
         <span className="spinner" />
         <h1 style={{ margin: '22px 0 8px', fontSize: 20, fontWeight: 700 }}>Pulling from DigiLocker...</h1>
-        <p style={{ margin: 0, fontSize: 14, color: '#9ca3af' }}>This usually takes 15-30 seconds.</p>
+        <p style={{ margin: 0, fontSize: 14, color: 'var(--muted)' }}>This usually takes 15-30 seconds.</p>
       </div>
       <FootBar>
         <Primary to="hr-individual-success">Continue</Primary>
@@ -623,20 +623,20 @@ export function HrPost1() {
         </p>
         <div className="stack-20">
           <div className="stack-8">
-            <span style={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>Job title</span>
+            <span style={{ fontSize: 14, color: 'var(--text-2)', fontWeight: 500 }}>Job title</span>
             <input className="input-50" defaultValue={job.title} placeholder="e.g. Senior Frontend Engineer" />
           </div>
           <div className="stack-8">
-            <span style={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>Department</span>
+            <span style={{ fontSize: 14, color: 'var(--text-2)', fontWeight: 500 }}>Department</span>
             <input className="input-50" defaultValue="Finance" placeholder="Select..." />
           </div>
           <div className="two">
             <div className="stack-8">
-              <span style={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>Employment type</span>
+              <span style={{ fontSize: 14, color: 'var(--text-2)', fontWeight: 500 }}>Employment type</span>
               <input className="input-50" defaultValue="Full-time" placeholder="Select..." />
             </div>
             <div className="stack-8">
-              <span style={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>Experience</span>
+              <span style={{ fontSize: 14, color: 'var(--text-2)', fontWeight: 500 }}>Experience</span>
               <input className="input-50" defaultValue="0-1 yrs" placeholder="Select..." />
             </div>
           </div>
@@ -662,7 +662,7 @@ export function HrPost2() {
         <h1 className="hr-title">Describe the work</h1>
         <div className="stack-20" style={{ marginTop: 20 }}>
           <div className="stack-8">
-            <span style={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>Job description</span>
+            <span style={{ fontSize: 14, color: 'var(--text-2)', fontWeight: 500 }}>Job description</span>
             <textarea
               className="input area"
               defaultValue={job.about}
@@ -671,14 +671,14 @@ export function HrPost2() {
             <span className="muted">Be specific — vague listings get flagged as scams.</span>
           </div>
           <div className="stack-8">
-            <span style={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>Requirements</span>
-            {job.requirements.slice(0, 3).map((line) => (
+            <span style={{ fontSize: 14, color: 'var(--text-2)', fontWeight: 500 }}>Requirements</span>
+            { (job.requirements || []).slice(0, 3).map((line) => (
               <input key={line} className="input-50" defaultValue={line} placeholder="e.g. 4+ yrs React in production" />
             ))}
             <button className="btn thin">+ Add requirement</button>
           </div>
           <div className="stack-8">
-            <span style={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>Skills</span>
+            <span style={{ fontSize: 14, color: 'var(--text-2)', fontWeight: 500 }}>Skills</span>
             <div className="chips">
               {['Tally Prime', 'GST Filing', 'Excel'].map((skill) => (
                 <span key={skill} className="chip on">
@@ -707,7 +707,7 @@ export function HrPost3() {
         <h1 className="hr-title">Pay and place</h1>
         <div className="stack-20" style={{ marginTop: 20 }}>
           <div className="stack-8">
-            <span style={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>Salary range (₹ LPA)</span>
+            <span style={{ fontSize: 14, color: 'var(--text-2)', fontWeight: 500 }}>Salary range (₹ LPA)</span>
             <div className="row" style={{ gap: 12 }}>
               <input className="input-50" style={{ width: '45%' }} defaultValue="3.6" placeholder="Min" />
               <span className="muted">to</span>
@@ -728,11 +728,11 @@ export function HrPost3() {
             </div>
           </div>
           <div className="stack-8">
-            <span style={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>Location</span>
+            <span style={{ fontSize: 14, color: 'var(--text-2)', fontWeight: 500 }}>Location</span>
             <input className="input-50" defaultValue={job.location} placeholder="City" />
           </div>
           <div className="stack-8">
-            <span style={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>Work mode</span>
+            <span style={{ fontSize: 14, color: 'var(--text-2)', fontWeight: 500 }}>Work mode</span>
             <div className="chips">
               {['On-site', 'Hybrid', 'Remote'].map((mode) => (
                 <span key={mode} className={mode === 'On-site' ? 'chip on' : 'chip'}>
@@ -742,7 +742,7 @@ export function HrPost3() {
             </div>
           </div>
           <div className="stack-8">
-            <span style={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>Application deadline</span>
+            <span style={{ fontSize: 14, color: 'var(--text-2)', fontWeight: 500 }}>Application deadline</span>
             <input className="input-50" defaultValue={job.deadline} placeholder="dd-mm-yyyy" />
           </div>
         </div>
@@ -764,11 +764,11 @@ export function HrPost4() {
         <h1 className="hr-title">Hiring setup</h1>
         <div className="stack-20" style={{ marginTop: 20 }}>
           <div className="stack-8">
-            <span style={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>Hiring manager</span>
+            <span style={{ fontSize: 14, color: 'var(--text-2)', fontWeight: 500 }}>Hiring manager</span>
             <input className="input-50" defaultValue={employer.name} placeholder="e.g. John Doe" />
           </div>
           <div className="stack-8">
-            <span style={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>Interview pipeline</span>
+            <span style={{ fontSize: 14, color: 'var(--text-2)', fontWeight: 500 }}>Interview pipeline</span>
             <div className="chips">
               {['Applied', 'Under review', 'Shortlisted', 'Interview', 'Offer sent', 'Hired'].map((stage) => (
                 <span key={stage} className="chip on">
@@ -779,7 +779,7 @@ export function HrPost4() {
             <span className="muted">These become the stages on this job&apos;s pipeline board.</span>
           </div>
           <div className="stack-8">
-            <span style={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>Screening questions</span>
+            <span style={{ fontSize: 14, color: 'var(--text-2)', fontWeight: 500 }}>Screening questions</span>
             <input className="input-50" defaultValue="How many years of Tally Prime experience do you have?" placeholder="Type your screening question" />
             <input className="input-50" defaultValue="Can you join within 15 days?" placeholder="Type your screening question" />
             <button className="btn thin">+ Add question</button>

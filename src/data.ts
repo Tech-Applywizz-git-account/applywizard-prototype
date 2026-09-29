@@ -1,5 +1,16 @@
 /** Sample content only. Nothing here talks to the Applywizard API. */
 
+export const accountDeletionState = {
+  requested: false,
+};
+
+export const accountState = {
+  deletionRequested: false,
+  deactivated: false,
+};
+
+export const savedJobIds = new Set<string>(['job-1', 'job-8', 'job-9']);
+
 export const seeker = {
   name: 'Ananya Rao',
   handle: '@ananya.rao',
@@ -26,63 +37,190 @@ export const trustBreakdown = [
   { label: 'B.Tech enrollment proof', points: 8 },
 ];
 
-export const job = {
-  title: 'Junior Accountant',
-  company: 'BrightPath Finance',
-  initials: 'BF',
-  logoColor: '#0d9488',
-  department: 'FINANCE',
-  type: 'Full-time',
-  experience: '0-1 yrs',
-  location: 'Hyderabad, Telangana',
-  salary: '₹3.6–4.8 LPA',
-  posted: '2 days ago',
-  match: 92,
-  deadline: '30-10-2026',
-  mode: 'On-site',
-  about:
-    'BrightPath Finance handles bookkeeping and compliance for 120+ small businesses across Telangana. You will own day-to-day ledgers for a set of clients.',
-  responsibilities: [
-    'Record purchase and sales entries in Tally Prime',
-    'Prepare monthly GST working and file GSTR-1 and GSTR-3B',
-    'Reconcile bank statements and vendor ledgers',
-    'Support the senior accountant during quarterly closing',
-  ],
-  requirements: [
-    'B.Com or M.Com',
-    'Tally Prime and Excel',
-    'Basic understanding of GST and TDS',
-    'Willing to work from the Madhapur office',
-  ],
+export type JobModel = {
+  id: string;
+  title: string;
+  company: string;
+  initials: string;
+  logoColor: string;
+  department: string;
+  type: string;
+  experience: string;
+  location: string;
+  salary: string;
+  posted: string;
+  match: number;
+  applicationType: 'QUICK_APPLY' | 'APPLY_NOW';
+  applyUrl?: string;
+  deadline?: string;
+  mode?: string;
+  about?: string;
+  responsibilities?: string[];
+  requirements?: string[];
 };
 
-export const secondJob = {
-  title: 'Accounts Executive',
-  company: 'Sruthi Traders',
-  initials: 'ST',
-  logoColor: '#ea580c',
-  department: 'FINANCE',
-  type: 'Full-time',
-  experience: '1-3 yrs',
-  location: 'Secunderabad, Telangana',
-  salary: '₹22,000/mo',
-  posted: '5 days ago',
-  match: 81,
-};
+export const allJobs: JobModel[] = [
+  {
+    id: 'job-1',
+    title: 'Software Engineer',
+    company: 'Google',
+    initials: 'GO',
+    logoColor: '#4285f4',
+    department: 'ENGG & TECH',
+    type: 'FULL TIME',
+    experience: 'FRESHER',
+    location: 'HYDERABAD',
+    salary: 'Salary not disclosed',
+    posted: '4 hours ago',
+    match: 80,
+    applicationType: 'APPLY_NOW',
+    applyUrl: 'https://careers.google.com',
+  },
+  {
+    id: 'job-2',
+    title: 'data engineer',
+    company: 'Applywizz',
+    initials: 'AP',
+    logoColor: '#2563eb',
+    department: 'ENGG & TECH',
+    type: 'FULL TIME',
+    experience: 'MID',
+    location: 'HYDERABAD',
+    salary: 'Salary not disclosed',
+    posted: '5 days ago',
+    match: 98,
+    applicationType: 'QUICK_APPLY',
+  },
+  {
+    id: 'job-3',
+    title: 'Sr. Analyst - Business Data Services 4B',
+    company: 'Genpact',
+    initials: 'GP',
+    logoColor: '#111827',
+    department: 'BUSINESS ANALYST',
+    type: 'FULL TIME',
+    experience: 'FRESHER',
+    location: 'MH',
+    salary: 'Salary not disclosed',
+    posted: '4 hours ago',
+    match: 68,
+    applicationType: 'APPLY_NOW',
+    applyUrl: 'https://www.genpact.com/careers',
+  },
+  {
+    id: 'job-4',
+    title: 'Lead UX Designer',
+    company: 'Gartner',
+    initials: 'GT',
+    logoColor: '#0284c7',
+    department: 'BUSINESS INTELLIGENCE ENGINEER',
+    type: 'FULL TIME',
+    experience: '7+ YEARS',
+    location: 'HR',
+    salary: 'Salary not disclosed',
+    posted: '4 hours ago',
+    match: 68,
+    applicationType: 'APPLY_NOW',
+    applyUrl: 'https://jobs.gartner.com',
+  },
+  {
+    id: 'job-5',
+    title: 'Mobile Engineer (Android)',
+    company: 'Applywizz',
+    initials: 'AP',
+    logoColor: '#db2777',
+    department: 'ENGG & TECH',
+    type: 'FULL TIME',
+    experience: '3 - 6 YEARS',
+    location: 'REMOTE',
+    salary: '₹8 - 15 LPA',
+    posted: '4 days ago',
+    match: 68,
+    applicationType: 'QUICK_APPLY',
+  },
+  {
+    id: 'job-6',
+    title: 'Investment Banking Senior Analyst',
+    company: 'Wells Fargo',
+    initials: 'WF',
+    logoColor: '#dc2626',
+    department: 'FINANCIAL ANALYST',
+    type: 'FULL TIME',
+    experience: '4+ YEARS',
+    location: 'HYDERABAD',
+    salary: 'Salary not disclosed',
+    posted: '11 Sept',
+    match: 68,
+    applicationType: 'APPLY_NOW',
+    applyUrl: 'https://www.wellsfargojobs.com',
+  },
+  {
+    id: 'job-7',
+    title: 'Junior Accountant',
+    company: 'BrightPath Finance',
+    initials: 'BF',
+    logoColor: '#0d9488',
+    department: 'FINANCE',
+    type: 'Full-time',
+    experience: '0-1 yrs',
+    location: 'Hyderabad, Telangana',
+    salary: '₹3.6–4.8 LPA',
+    posted: '2 days ago',
+    match: 92,
+    applicationType: 'QUICK_APPLY',
+    deadline: '30-10-2026',
+    mode: 'On-site',
+    about:
+      'BrightPath Finance handles bookkeeping and compliance for 120+ small businesses across Telangana. You will own day-to-day ledgers for a set of clients.',
+    responsibilities: [
+      'Record purchase and sales entries in Tally Prime',
+      'Prepare monthly GST working and file GSTR-1 and GSTR-3B',
+      'Reconcile bank statements and vendor ledgers',
+      'Support the senior accountant during quarterly closing',
+    ],
+    requirements: [
+      'B.Com or M.Com',
+      'Tally Prime and Excel',
+      'Basic understanding of GST and TDS',
+      'Willing to work from the Madhapur office',
+    ],
+  },
+  {
+    id: 'job-8',
+    title: 'Accounts Executive',
+    company: 'Sruthi Traders',
+    initials: 'ST',
+    logoColor: '#ea580c',
+    department: 'FINANCE',
+    type: 'Full-time',
+    experience: '1-3 yrs',
+    location: 'Secunderabad, Telangana',
+    salary: '₹22,000/mo',
+    posted: '5 days ago',
+    match: 81,
+    applicationType: 'QUICK_APPLY',
+  },
+  {
+    id: 'job-9',
+    title: 'SAP FICO Associate',
+    company: 'Novatek Systems',
+    initials: 'NS',
+    logoColor: '#7c3aed',
+    department: 'SAP / CLOUD',
+    type: 'Full-time',
+    experience: '1-3 yrs',
+    location: 'Bengaluru, Karnataka',
+    salary: '₹6–9 LPA',
+    posted: '1 week ago',
+    match: 74,
+    applicationType: 'APPLY_NOW',
+    applyUrl: 'https://www.novateksystems.com/careers',
+  },
+];
 
-export const thirdJob = {
-  title: 'SAP FICO Associate',
-  company: 'Novatek Systems',
-  initials: 'NS',
-  logoColor: '#7c3aed',
-  department: 'SAP / CLOUD',
-  type: 'Full-time',
-  experience: '1-3 yrs',
-  location: 'Bengaluru, Karnataka',
-  salary: '₹6–9 LPA',
-  posted: '1 week ago',
-  match: 74,
-};
+export const job = allJobs[6];
+export const secondJob = allJobs[7];
+export const thirdJob = allJobs[8];
 
 export const employer = {
   name: 'Priya Sharma',
@@ -183,6 +321,8 @@ export const FILTER_CATEGORIES = [
 export const FILTER_EXPERIENCE = ['Fresher', '0-1 yrs', '1-3 yrs', '3-5 yrs', '5-7 yrs', '7-10 yrs', '10+ yrs'];
 
 export const FILTER_EMPLOYMENT_TYPES = ['Full-time', 'Part-time', 'Internship', 'Contract'];
+
+export const FILTER_APPLICATION_TYPES = ['All', 'Quick Apply', 'Apply Now'];
 
 export const FILTER_DATE_POSTED = [
   { id: 'today', label: 'Today' },

@@ -45,6 +45,7 @@ export function FiltersSheet() {
   const [categories, setCategories] = useState(['Finance']);
   const [experience, setExperience] = useState(['0-1 yrs']);
   const [types, setTypes] = useState(['Full-time']);
+  const [appType, setAppType] = useState('All');
   const [datePosted, setDatePosted] = useState<string | null>(null);
 
   return (
@@ -70,6 +71,21 @@ export function FiltersSheet() {
                   onClick={() => setDatePosted(datePosted === option.id ? null : option.id)}
                 >
                   {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="filter-section">
+            <p>APPLICATION TYPE</p>
+            <div className="chips">
+              {['All', 'Quick Apply', 'Apply Now'].map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  className={appType === option ? 'chip on' : 'chip'}
+                  onClick={() => setAppType(option)}
+                >
+                  {option}
                 </button>
               ))}
             </div>

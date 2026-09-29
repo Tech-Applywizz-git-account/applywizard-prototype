@@ -10,6 +10,7 @@ import {
   PlainBar,
   TextLink,
 } from '../kit';
+import { useFetchedDigiDocs } from '../digilockerState';
 import { VerifyStep } from './seekerAuth';
 import { educationLevels, seeker, suggestedSkills, trustBreakdown, verificationSteps } from '../data';
 import { useNav } from '../nav';
@@ -84,14 +85,14 @@ export function VerifyDashboard() {
       <PlainBar title="Verification" />
       <Body>
         <div className="card" style={{ textAlign: 'center' }}>
-          <div className="ring" style={{ ['--pct' as string]: 34 }}>
+          <div className="ring" style={{ ['--pct' as string]: seeker.trustScore }}>
             <div className="inner">
-              <b>34</b>
+              <b>{seeker.trustScore}</b>
               <span>TRUST SCORE</span>
             </div>
           </div>
-          <p style={{ margin: '16px 0 0', fontSize: 14, color: '#374151', lineHeight: '21px' }}>
-            Reach 70+ to earn the verified badge. Finish the remaining steps to add up to 44 points.
+          <p style={{ margin: '16px 0 0', fontSize: 14, color: 'var(--text-2)', lineHeight: '21px' }}>
+            Reach 70+ to earn the verified badge. Your current score is {seeker.trustScore} — {seeker.trustScore >= 70 ? 'verified badge active.' : `add ${70 - seeker.trustScore} more points to unlock your badge.`}
           </p>
         </div>
 
@@ -241,6 +242,14 @@ export function VerifySkills() {
 /** app/verification/documents.tsx */
 export function VerifyDocuments() {
   const nav = useNav();
+  const fetched = useFetchedDigiDocs();
+  const hasIdentity = fetched.includes('pan') || fetched.includes('aadhaar');
+  const identityLabel = fetched.includes('pan')
+    ? 'PAN'
+    : fetched.includes('aadhaar')
+      ? 'Aadhaar'
+      : null;
+
   return (
     <>
       <VerifyStep
@@ -258,17 +267,46 @@ export function VerifyDocuments() {
           </span>
           <span className="body">
             <strong>Fetch from DigiLocker</strong>
-            <span>Aadhaar + PAN · government issued · fastest</span>
+            <span>
+              {hasIdentity
+                ? `${identityLabel} · ✓ Fetched from DigiLocker`
+                : 'Aadhaar + PAN · government issued · fastest'}
+            </span>
           </span>
+          {hasIdentity ? <Check size={18} color="#16a34a" /> : null}
         </button>
         <div style={{ height: 10 }} />
         <Choice title="Upload Aadhaar or PAN" sub="Manual ops review · 1–2 working days" />
 
         <p className="label-xs">Education</p>
         <div className="steps">
-          <Choice title="Class 10 marksheet" sub="SSC / Matric / CBSE / ICSE / State Board" on />
-          <Choice title="Class 12 marksheet" sub="Intermediate / HSC / PUC" on />
-          <Choice title="Degree certificate" sub="Bachelor's degree or provisional certificate" />
+          <Choice
+            title="Class 10 marksheet"
+            sub={
+              fetched.includes('class10')
+                ? '✓ Fetched from DigiLocker'
+                : 'SSC / Matric / CBSE / ICSE / State Board'
+            }
+            on
+          />
+          <Choice
+            title="Class 12 marksheet"
+            sub={
+              fetched.includes('class12')
+                ? '✓ Fetched from DigiLocker'
+                : 'Intermediate / HSC / PUC'
+            }
+            on
+          />
+          <Choice
+            title="Degree certificate"
+            sub={
+              fetched.includes('degree')
+                ? '✓ Fetched from DigiLocker'
+                : "Bachelor's degree or provisional certificate"
+            }
+            on={fetched.includes('degree')}
+          />
           <Choice title="Master's certificate" sub="Master's degree certificate" />
         </div>
       </VerifyStep>
@@ -276,46 +314,8 @@ export function VerifyDocuments() {
   );
 }
 
-/** app/verification/digilocker/complete.tsx */
-export function SeekerDigilocker() {
-  return (
-    <>
-      <div className="digibar">
-        <span className="mark">
-          <ShieldCheck size={18} />
-        </span>
-        DigiLocker
-      </div>
-      <div className="center-screen">
-        <div className="burst">
-          <Check size={44} strokeWidth={3} />
-        </div>
-        <h1 className="display">Identity document received</h1>
-        <p className="lede">
-          Aadhaar and PAN were fetched from DigiLocker. Face match scored 94%, so 30 points are added to your trust
-          score.
-        </p>
-        <div className="card" style={{ width: '100%', textAlign: 'left' }}>
-          <div className="kv">
-            <span>Aadhaar</span>
-            <b>XXXX XXXX 4417</b>
-          </div>
-          <div className="kv">
-            <span>PAN</span>
-            <b>ABCDE1234F</b>
-          </div>
-          <div className="kv">
-            <span>Face match</span>
-            <b style={{ color: '#16a34a' }}>94%</b>
-          </div>
-        </div>
-      </div>
-      <FootBar>
-        <Primary to="js-verify-review">Continue</Primary>
-      </FootBar>
-    </>
-  );
-}
+/** DigiLocker prototype multi-step flow. */
+export { DigiLockerFlow as SeekerDigilocker } from './digilockerFlow';
 
 /** app/verification/review.tsx */
 export function VerifyReview() {
@@ -381,7 +381,7 @@ export function TrustScore() {
               <span>TRUST SCORE</span>
             </div>
           </div>
-          <p style={{ margin: '16px 0 0', fontSize: 14, color: '#374151' }}>
+          <p style={{ margin: '16px 0 0', fontSize: 14, color: 'var(--text-2)' }}>
             Verified badge earned. You are ahead of 82% of applicants in Hyderabad.
           </p>
         </div>
@@ -421,10 +421,10 @@ export function Milestone() {
           <div className="progcard" style={{ border: 0, padding: 0, margin: 0 }}>
             <div className="top">
               <span>NEXT MILESTONE</span>
-              <b>78 / 90</b>
+              <b>{seeker.trustScore} / 90</b>
             </div>
             <div className="progtrack">
-              <i style={{ width: '78%' }} />
+              <i style={{ width: `${Math.min(seeker.trustScore, 90)}%` }} />
             </div>
           </div>
           <p className="muted" style={{ marginTop: 10 }}>
