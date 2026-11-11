@@ -10,11 +10,13 @@ import {
   ChevronRight,
   CircleUser,
   Clock,
+  ExternalLink,
   FileText,
   Globe,
   GraduationCap,
   IndianRupee,
   LifeBuoy,
+  Lock,
   MapPin,
   PauseCircle,
   Phone,
@@ -22,6 +24,7 @@ import {
   Send,
   Settings,
   Share2,
+  ShieldAlert,
   ShieldCheck,
   SlidersHorizontal,
   Sparkles,
@@ -48,7 +51,8 @@ import {
   Toggle,
   type CardJob,
 } from '../kit';
-import { accountDeletionState, accountState, allJobs, filterCategories, job, savedJobIds, seeker } from '../data';
+import { accountDeletionState, accountState, allJobs, filterCategories, job, savedJobIds, seeker, type JobModel } from '../data';
+import { useJobFilters } from '../filterState';
 import { useNav } from '../nav';
 import { useLanguage, changeLanguage, type LanguageCode } from '../language';
 import { useTheme, changeTheme } from '../theme';
@@ -58,9 +62,91 @@ import {
   useApplications,
   useSelectedJob,
 } from '../applyState';
+import { isSeekerVerified, useSeekerVerified } from '../seekerVerification';
 import { QuickApply as QuickApplyFlow } from './quickApplyFlow';
 
 export { QuickApplyFlow as QuickApply };
+
+function jobMatchesFilters(j: JobModel, query: string, filters: ReturnType<typeof useJobFilters>) {
+  if (query.trim()) {
+    const q = query.toLowerCase().trim();
+    const match =
+      j.title.toLowerCase().includes(q) ||
+      j.company.toLowerCase().includes(q) ||
+      j.location.toLowerCase().includes(q) ||
+      j.department.toLowerCase().includes(q) ||
+      (j.mode || '').toLowerCase().includes(q);
+    if (!match) return false;
+  }
+
+  if (filters.workModes.length) {
+    const mode = (j.mode || (j.location.toUpperCase() === 'REMOTE' ? 'Remote' : 'On-site')).toLowerCase();
+    const ok = filters.workModes.some((m) => {
+      if (m === 'Remote') return mode.includes('remote') || Boolean(j.remotePartner);
+      return mode.includes(m.toLowerCase());
+    });
+    if (!ok) return false;
+  }
+
+  if (filters.cities.length) {
+    const loc = j.location.toLowerCase();
+    const ok = filters.cities.some((city) => {
+      if (city === 'Remote') return loc.includes('remote') || Boolean(j.remotePartner) || (j.mode || '').toLowerCase() === 'remote';
+      if (city === 'Global') return loc.includes('global') || Boolean(j.openGlobally);
+      return loc.includes(city.toLowerCase());
+    });
+    if (!ok) return false;
+  }
+
+  if (filters.appType === 'Quick Apply' && j.applicationType !== 'QUICK_APPLY') return false;
+  if (filters.appType === 'Apply Now' && j.applicationType !== 'APPLY_NOW') return false;
+
+  if (filters.types.length) {
+    const type = j.type.toLowerCase().replace(/[-\s]/g, '');
+    const ok = filters.types.some((t) => type.includes(t.toLowerCase().replace(/[-\s]/g, '')));
+    if (!ok) return false;
+  }
+
+  if (filters.experience.length) {
+    const exp = j.experience.toLowerCase();
+    const ok = filters.experience.some((e) => exp.includes(e.toLowerCase()) || (e === 'Fresher' && exp.includes('fresher')));
+    if (!ok) return false;
+  }
+
+  return true;
+}
+
+function VerifyToApplySheet({
+  company,
+  onClose,
+  onVerify,
+}: {
+  company: string;
+  onClose: () => void;
+  onVerify: () => void;
+}) {
+  return (
+    <div className="verify-gate">
+      <button type="button" className="verify-gate-backdrop" aria-label="Close" onClick={onClose} />
+      <div className="verify-gate-sheet" role="dialog" aria-modal="true" aria-label="Verification required">
+        <span className="verify-gate-icon">
+          <ShieldAlert size={28} color="#4432ff" />
+        </span>
+        <h3>Verification required</h3>
+        <p>
+          Only verified users can apply to these remote US partner jobs
+          {company ? ` from ${company}` : ''}. Complete verification to continue.
+        </p>
+        <button type="button" className="btn" style={{ width: '100%' }} onClick={onVerify}>
+          Verify now
+        </button>
+        <button type="button" className="verify-gate-secondary" onClick={onClose}>
+          Not now
+        </button>
+      </div>
+    </div>
+  );
+}
 
 /** app/jobseeker/(tabs)/index.tsx — guest mode: Jobs only. */
 export function GuestJobs() {
@@ -140,10 +226,15 @@ export function toggleSavedJob(jobId: string) {
   savedJobListeners.forEach((fn) => fn());
 }
 
-export function openCareersPortal(jobItem: CardJob) {
-  const companySlug = jobItem.company.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const url = jobItem.applyUrl || `https://www.${companySlug}.com/careers`;
-  window.open(url, '_blank');
+export function careersUrlFor(jobItem: CardJob) {
+  const companySlug = jobItem.company.toLowerCase().replace(/[^a-z0-9]/g, '') || 'company';
+  return jobItem.applyUrl || `https://www.${companySlug}.com/careers/apply`;
+}
+
+/** Opens the in-prototype Chrome careers browser (no real external tab). */
+export function openCareersPortal(jobItem: CardJob, nav: { push: (id: string) => void }) {
+  if (jobItem.id) setSelectedJobId(jobItem.id);
+  nav.push('js-chrome-apply');
 }
 
 /** app/jobseeker/(tabs)/index.tsx */
@@ -151,19 +242,24 @@ export function Jobs() {
   const nav = useNav();
   const [query, setQuery] = useState('');
   const savedIds = useSavedJobIds();
+  const filters = useJobFilters();
+  const [verifyJob, setVerifyJob] = useState<JobModel | null>(null);
 
-  const filtered = allJobs.filter((j) => {
-    if (query.trim()) {
-      const q = query.toLowerCase().trim();
-      const match =
-        j.title.toLowerCase().includes(q) ||
-        j.company.toLowerCase().includes(q) ||
-        j.location.toLowerCase().includes(q) ||
-        j.department.toLowerCase().includes(q);
-      if (!match) return false;
+  const filtered = allJobs.filter((j) => jobMatchesFilters(j, query, filters));
+
+  const tryApply = (jobItem: JobModel | CardJob) => {
+    const full = allJobs.find((j) => j.id === jobItem.id) ?? (jobItem as JobModel);
+    setSelectedJobId(full.id);
+    if (full.remotePartner && !isSeekerVerified()) {
+      setVerifyJob(full);
+      return;
     }
-    return true;
-  });
+    if (full.applicationType === 'APPLY_NOW') {
+      openCareersPortal(full, nav);
+    } else {
+      nav.push('js-apply');
+    }
+  };
 
   return (
     <>
@@ -174,6 +270,12 @@ export function Jobs() {
           onSaved={() => nav.reset('js-saved')}
           onRecent={() => nav.open('filters')}
         />
+        {filters.workModes.includes('Remote') ? (
+          <div className="remote-filter-banner">
+            <Globe size={16} color="#0f766e" />
+            <span>Showing remote US partner jobs. Verification is required to apply.</span>
+          </div>
+        ) : null}
         <div className="pad" style={{ paddingTop: 0 }}>
           {filtered.map((j) => (
             <JobCard
@@ -186,18 +288,26 @@ export function Jobs() {
                 setSelectedJobId(jobItem.id!);
                 nav.push('js-job');
               }}
-              onApply={(jobItem) => {
-                setSelectedJobId(jobItem.id!);
-                if (jobItem.applicationType === 'APPLY_NOW') {
-                  openCareersPortal(jobItem);
-                } else {
-                  nav.push('js-apply');
-                }
-              }}
+              onApply={(jobItem) => tryApply(jobItem)}
             />
           ))}
+          {filtered.length === 0 ? (
+            <p className="muted" style={{ textAlign: 'center', padding: '28px 12px' }}>
+              No jobs match these filters.
+            </p>
+          ) : null}
         </div>
       </div>
+      {verifyJob ? (
+        <VerifyToApplySheet
+          company={verifyJob.company}
+          onClose={() => setVerifyJob(null)}
+          onVerify={() => {
+            setVerifyJob(null);
+            nav.push('js-verify-dashboard');
+          }}
+        />
+      ) : null}
       <SeekerTabs active="js-jobs" />
     </>
   );
@@ -208,9 +318,26 @@ export function JobDetails() {
   const nav = useNav();
   const savedIds = useSavedJobIds();
   const currentJob = useSelectedJob();
+  const verified = useSeekerVerified();
+  const [showVerifyGate, setShowVerifyGate] = useState(false);
   const isSaved = savedIds.has(currentJob.id);
   const isApplyNow = currentJob.applicationType === 'APPLY_NOW';
   const alreadyApplied = hasAppliedToJob(currentJob.id);
+  const isRemotePartner = Boolean(currentJob.remotePartner);
+
+  const handleApply = () => {
+    if (isRemotePartner && !isSeekerVerified()) {
+      setShowVerifyGate(true);
+      return;
+    }
+    if (isApplyNow) {
+      openCareersPortal(currentJob, nav);
+    } else if (alreadyApplied) {
+      nav.reset('js-applied');
+    } else {
+      nav.push('js-apply');
+    }
+  };
 
   return (
     <>
@@ -224,132 +351,209 @@ export function JobDetails() {
         }
       />
       <div className="scroll pad">
-        <div className="card">
-          <div className="row" style={{ gap: 12, alignItems: 'flex-start' }}>
-            <span className="jobcard-logo logo" style={{ width: 52, height: 52, borderRadius: 14, background: currentJob.logoColor, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
-              {currentJob.initials}
-            </span>
-            <div style={{ flex: 1 }}>
-              <h2 className="h2" style={{ fontSize: 19, lineHeight: '24px' }}>{currentJob.title}</h2>
-              <p style={{ margin: '4px 0 0', color: 'var(--text-2)', fontSize: 14, fontWeight: 500 }}>{currentJob.company}</p>
+        {isRemotePartner ? (
+          <>
+            <div className="remote-job-hero">
+              <div className="remote-job-company">
+                <span className="remote-job-building">
+                  <Building2 size={18} color="#6b7280" />
+                </span>
+                <span>{currentJob.company}</span>
+              </div>
+              <h2 className="remote-job-title">{currentJob.title}</h2>
+              <div className="remote-job-meta">
+                <span>
+                  <MapPin size={14} /> {currentJob.locationDetail || 'Global, fully remote'}
+                </span>
+                <span>
+                  <Globe size={14} /> Remote
+                </span>
+              </div>
+              {currentJob.openGlobally ? (
+                <span className="tag open-global" style={{ marginTop: 12 }}>
+                  <Globe size={11} /> Open globally
+                </span>
+              ) : null}
             </div>
-          </div>
-          <div className="chips" style={{ marginTop: 14 }}>
-            <span className="match">
-              <Sparkles size={12} /> {currentJob.match}% MATCH
-            </span>
-            <span className="tag dept">{currentJob.department}</span>
-            <span className="tag">{currentJob.type}</span>
-            <span className="tag">{currentJob.experience}</span>
-          </div>
-          <div className="kv" style={{ marginTop: 14, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
-            <span>
-              <IndianRupee size={13} style={{ verticalAlign: -2 }} /> Salary
-            </span>
-            <b>{currentJob.salary}</b>
-          </div>
-          <div className="kv">
-            <span>
-              <MapPin size={13} style={{ verticalAlign: -2 }} /> Location
-            </span>
-            <b>{currentJob.location}</b>
-          </div>
-          <div className="kv">
-            <span>
-              <Building2 size={13} style={{ verticalAlign: -2 }} /> Work mode
-            </span>
-            <b>{currentJob.mode || 'On-site'}</b>
-          </div>
-          <div className="kv">
-            <span>
-              <CalendarClock size={13} style={{ verticalAlign: -2 }} /> Apply before
-            </span>
-            <b>{currentJob.deadline || '30-10-2026'}</b>
-          </div>
-        </div>
 
-        <div className="banner green">
-          <span className="title">
-            <ShieldCheck size={18} color="#16a34a" /> Verified employer
-          </span>
-          <p>{currentJob.company} verified their company PAN and CIN with Applywizard.</p>
-        </div>
+            <div className="remote-job-divider" />
 
-        <p className="label-xs">About the role</p>
-        <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 14, lineHeight: '23px' }}>
-          {currentJob.about || 'Join our dynamic team to scale core services and solve impact problems.'}
-        </p>
+            {!verified ? (
+              <div className="banner amber">
+                <span className="title">
+                  <ShieldAlert size={18} color="#d97706" /> Verification required to apply
+                </span>
+                <p>Only verified users can apply to these remote US partner jobs.</p>
+              </div>
+            ) : (
+              <div className="banner green">
+                <span className="title">
+                  <ShieldCheck size={18} color="#16a34a" /> You are verified
+                </span>
+                <p>You can apply to this remote US partner role.</p>
+              </div>
+            )}
 
-        {currentJob.responsibilities && (
+            <div className="remote-job-copy">
+              <p>
+                <strong>{currentJob.about || currentJob.title}</strong>
+              </p>
+              {currentJob.payDetail ? <p>Pay: {currentJob.payDetail}</p> : null}
+              <p>Location: {currentJob.locationDetail || currentJob.location}</p>
+              {currentJob.jobTypeDetail ? <p>Job Type: {currentJob.jobTypeDetail}</p> : null}
+              {currentJob.schedule ? <p>Schedule: {currentJob.schedule}</p> : null}
+              <p>{currentJob.descriptionBody || currentJob.about}</p>
+            </div>
+
+            {currentJob.requirements ? (
+              <>
+                <p className="label-xs">Requirements</p>
+                <ul className="bullets">
+                  {currentJob.requirements.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
+          </>
+        ) : (
           <>
-            <p className="label-xs">What you will do</p>
-            <ul className="bullets">
-              {currentJob.responsibilities.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
+            <div className="card">
+              <div className="row" style={{ gap: 12, alignItems: 'flex-start' }}>
+                <span className="jobcard-logo logo" style={{ width: 52, height: 52, borderRadius: 14, background: currentJob.logoColor, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
+                  {currentJob.initials}
+                </span>
+                <div style={{ flex: 1 }}>
+                  <h2 className="h2" style={{ fontSize: 19, lineHeight: '24px' }}>{currentJob.title}</h2>
+                  <p style={{ margin: '4px 0 0', color: 'var(--text-2)', fontSize: 14, fontWeight: 500 }}>{currentJob.company}</p>
+                </div>
+              </div>
+              <div className="chips" style={{ marginTop: 14 }}>
+                <span className="match">
+                  <Sparkles size={12} /> {currentJob.match}% MATCH
+                </span>
+                <span className="tag dept">{currentJob.department}</span>
+                <span className="tag">{currentJob.type}</span>
+                <span className="tag">{currentJob.experience}</span>
+              </div>
+              <div className="kv" style={{ marginTop: 14, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+                <span>
+                  <IndianRupee size={13} style={{ verticalAlign: -2 }} /> Salary
+                </span>
+                <b>{currentJob.salary}</b>
+              </div>
+              <div className="kv">
+                <span>
+                  <MapPin size={13} style={{ verticalAlign: -2 }} /> Location
+                </span>
+                <b>{currentJob.location}</b>
+              </div>
+              <div className="kv">
+                <span>
+                  <Building2 size={13} style={{ verticalAlign: -2 }} /> Work mode
+                </span>
+                <b>{currentJob.mode || 'On-site'}</b>
+              </div>
+              <div className="kv">
+                <span>
+                  <CalendarClock size={13} style={{ verticalAlign: -2 }} /> Apply before
+                </span>
+                <b>{currentJob.deadline || '30-10-2026'}</b>
+              </div>
+            </div>
+
+            <div className="banner green">
+              <span className="title">
+                <ShieldCheck size={18} color="#16a34a" /> Verified employer
+              </span>
+              <p>{currentJob.company} verified their company PAN and CIN with Applywizard.</p>
+            </div>
+
+            <p className="label-xs">About the role</p>
+            <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 14, lineHeight: '23px' }}>
+              {currentJob.about || 'Join our dynamic team to scale core services and solve impact problems.'}
+            </p>
+
+            {currentJob.responsibilities && (
+              <>
+                <p className="label-xs">What you will do</p>
+                <ul className="bullets">
+                  {currentJob.responsibilities.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
+              </>
+            )}
+
+            {currentJob.requirements && (
+              <>
+                <p className="label-xs">Requirements</p>
+                <ul className="bullets">
+                  {currentJob.requirements.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
+              </>
+            )}
+
+            <p className="label-xs">Posted by</p>
+            <div className="card row" style={{ gap: 12 }}>
+              <Avatar initials="PS" color="#4432ff" size={42} />
+              <div style={{ flex: 1 }}>
+                <strong style={{ fontSize: 15 }}>Priya Sharma</strong>
+                <p className="muted" style={{ margin: 0 }}>HR Manager · replies in about 2 days</p>
+              </div>
+            </div>
           </>
         )}
-
-        {currentJob.requirements && (
-          <>
-            <p className="label-xs">Requirements</p>
-            <ul className="bullets">
-              {currentJob.requirements.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
-          </>
-        )}
-
-        <p className="label-xs">Posted by</p>
-        <div className="card row" style={{ gap: 12 }}>
-          <Avatar initials="PS" color="#4432ff" size={42} />
-          <div style={{ flex: 1 }}>
-            <strong style={{ fontSize: 15 }}>Priya Sharma</strong>
-            <p className="muted" style={{ margin: 0 }}>HR Manager · replies in about 2 days</p>
-          </div>
-        </div>
       </div>
       <FootBar>
-        <div className="row" style={{ gap: 10 }}>
-          <button
-            className="save"
-            onClick={() => toggleSavedJob(currentJob.id)}
-            style={{
-              width: 54,
-              height: 54,
-              borderRadius: 14,
-              border: `1px solid ${isSaved ? '#4432ff' : 'var(--border)'}`,
-              background: isSaved ? 'var(--primary-light)' : 'var(--card)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: isSaved ? '#4432ff' : 'var(--muted)',
-              cursor: 'pointer',
-            }}
-          >
-            <Bookmark size={20} fill={isSaved ? '#4432ff' : 'none'} />
+        {isRemotePartner ? (
+          <button className="btn" style={{ width: '100%' }} onClick={handleApply}>
+            <ExternalLink size={18} /> Apply Now
           </button>
-          <button
-            className="btn"
-            style={{ flex: 1 }}
-            disabled={alreadyApplied && !isApplyNow}
-            onClick={() => {
-              if (isApplyNow) {
-                openCareersPortal(currentJob);
-              } else if (alreadyApplied) {
-                nav.reset('js-applied');
-              } else {
-                nav.push('js-apply');
-              }
-            }}
-          >
-            <Sparkles size={18} />{' '}
-            {isApplyNow ? 'Apply Now' : alreadyApplied ? 'View application' : 'Quick Apply'}
-          </button>
-        </div>
+        ) : (
+          <div className="row" style={{ gap: 10 }}>
+            <button
+              className="save"
+              onClick={() => toggleSavedJob(currentJob.id)}
+              style={{
+                width: 54,
+                height: 54,
+                borderRadius: 14,
+                border: `1px solid ${isSaved ? '#4432ff' : 'var(--border)'}`,
+                background: isSaved ? 'var(--primary-light)' : 'var(--card)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: isSaved ? '#4432ff' : 'var(--muted)',
+                cursor: 'pointer',
+              }}
+            >
+              <Bookmark size={20} fill={isSaved ? '#4432ff' : 'none'} />
+            </button>
+            <button
+              className="btn"
+              style={{ flex: 1 }}
+              disabled={alreadyApplied && !isApplyNow}
+              onClick={handleApply}
+            >
+              <Sparkles size={18} />{' '}
+              {isApplyNow ? 'Apply Now' : alreadyApplied ? 'View application' : 'Quick Apply'}
+            </button>
+          </div>
+        )}
       </FootBar>
+      {showVerifyGate ? (
+        <VerifyToApplySheet
+          company={currentJob.company}
+          onClose={() => setShowVerifyGate(false)}
+          onVerify={() => {
+            setShowVerifyGate(false);
+            nav.push('js-verify-dashboard');
+          }}
+        />
+      ) : null}
     </>
   );
 }
@@ -358,11 +562,6 @@ export function JobDetails() {
 export function ApplyNow() {
   const nav = useNav();
   const applyJob = useSelectedJob();
-
-  const handleExternalRedirect = () => {
-    openCareersPortal(applyJob);
-    nav.reset('js-applied');
-  };
 
   return (
     <>
@@ -383,7 +582,7 @@ export function ApplyNow() {
             <Globe size={18} color="#1d4ed8" /> External Employer Application
           </span>
           <p style={{ margin: '6px 0 0', fontSize: 13, color: '#1e40af', lineHeight: '18px' }}>
-            Clicking below will direct you to {applyJob.company}&apos;s official application portal.
+            Clicking below opens {applyJob.company}&apos;s careers page in Chrome inside this prototype.
           </p>
         </div>
 
@@ -411,12 +610,143 @@ export function ApplyNow() {
           type="button"
           className="btn"
           style={{ width: '100%' }}
-          onClick={handleExternalRedirect}
+          onClick={() => openCareersPortal(applyJob, nav)}
         >
-          Redirect to {applyJob.company} Careers Portal
+          Open in Chrome
         </button>
       </FootBar>
     </>
+  );
+}
+
+/** In-prototype Chrome browser showing a dummy external careers application. */
+export function ChromeCareersApply() {
+  const nav = useNav();
+  const job = useSelectedJob();
+  const url = careersUrlFor(job);
+  const [name, setName] = useState(seeker.name);
+  const [email, setEmail] = useState(seeker.email);
+  const [phone, setPhone] = useState(seeker.phone);
+  const [cover, setCover] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const host = (() => {
+    try {
+      return new URL(url).host;
+    } catch {
+      return 'careers.partner.com';
+    }
+  })();
+
+  const submit = () => {
+    if (submitting || submitted) return;
+    setSubmitting(true);
+    window.setTimeout(() => {
+      setSubmitting(false);
+      setSubmitted(true);
+    }, 700);
+  };
+
+  return (
+    <div className="chrome-screen">
+      <div className="chrome-top">
+        <div className="chrome-tabs">
+          <div className="chrome-tab on">
+            <Globe size={12} />
+            <span>{job.company} Careers</span>
+            <button type="button" className="chrome-tab-close" aria-label="Close tab" onClick={() => nav.back()}>
+              <X size={12} />
+            </button>
+          </div>
+          <span className="chrome-newtab" aria-hidden>
+            +
+          </span>
+        </div>
+        <div className="chrome-toolbar">
+          <div className="chrome-nav-btns">
+            <button type="button" aria-label="Back" onClick={() => nav.back()}>
+              ‹
+            </button>
+            <button type="button" aria-label="Forward" disabled>
+              ›
+            </button>
+            <button type="button" aria-label="Refresh" onClick={() => setSubmitted(false)}>
+              ↻
+            </button>
+          </div>
+          <div className="chrome-omnibox">
+            <Lock size={12} color="#188038" />
+            <span>{url}</span>
+          </div>
+          <button type="button" className="chrome-done" onClick={() => nav.back()}>
+            Done
+          </button>
+        </div>
+      </div>
+
+      <div className="chrome-page">
+        {submitted ? (
+          <div className="chrome-success">
+            <div className="chrome-success-icon">
+              <Check size={28} color="#fff" strokeWidth={3} />
+            </div>
+            <h2>Application submitted</h2>
+            <p>
+              Your application for <strong>{job.title}</strong> was sent to {job.company} via their careers portal.
+            </p>
+            <button type="button" className="chrome-primary" onClick={() => nav.reset('js-applied')}>
+              Back to Applywizard
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="chrome-site-header">
+              <span className="chrome-favicon" style={{ background: job.logoColor }}>
+                {job.initials}
+              </span>
+              <div>
+                <strong>{host}</strong>
+                <em>Careers · External application</em>
+              </div>
+            </div>
+
+            <h1 className="chrome-h1">{job.title}</h1>
+            <p className="chrome-sub">
+              {job.company} · {job.locationDetail || job.location}
+              {job.payDetail ? ` · ${job.payDetail}` : ''}
+            </p>
+
+            <div className="chrome-card">
+              <p className="chrome-label">Full name</p>
+              <input className="chrome-input" value={name} onChange={(e) => setName(e.target.value)} />
+              <p className="chrome-label">Email</p>
+              <input className="chrome-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <p className="chrome-label">Phone</p>
+              <input className="chrome-input" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              <p className="chrome-label">Cover note (optional)</p>
+              <textarea
+                className="chrome-textarea"
+                rows={4}
+                value={cover}
+                onChange={(e) => setCover(e.target.value)}
+                placeholder="Tell the hiring team why you are a fit…"
+              />
+              <div className="chrome-resume">
+                <FileText size={18} color="#4432ff" />
+                <span>
+                  <strong>{seeker.resumeFile}</strong>
+                  <em>Attached from Applywizard</em>
+                </span>
+              </div>
+              <button type="button" className="chrome-primary" onClick={submit} disabled={submitting || !name.trim() || !email.trim()}>
+                {submitting ? 'Submitting…' : 'Submit application'}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -511,6 +841,7 @@ export function Saved() {
   const nav = useNav();
   const savedIds = useSavedJobIds();
   const savedJobsList = allJobs.filter((j) => savedIds.has(j.id));
+  const [verifyJob, setVerifyJob] = useState<JobModel | null>(null);
 
   return (
     <>
@@ -538,9 +869,14 @@ export function Saved() {
                 nav.push('js-job');
               }}
               onApply={(jobItem) => {
-                setSelectedJobId(jobItem.id!);
-                if (jobItem.applicationType === 'APPLY_NOW') {
-                  openCareersPortal(jobItem);
+                const full = allJobs.find((item) => item.id === jobItem.id) ?? j;
+                setSelectedJobId(full.id);
+                if (full.remotePartner && !isSeekerVerified()) {
+                  setVerifyJob(full);
+                  return;
+                }
+                if (full.applicationType === 'APPLY_NOW') {
+                  openCareersPortal(full, nav);
                 } else {
                   nav.push('js-apply');
                 }
@@ -549,6 +885,16 @@ export function Saved() {
           ))
         )}
       </div>
+      {verifyJob ? (
+        <VerifyToApplySheet
+          company={verifyJob.company}
+          onClose={() => setVerifyJob(null)}
+          onVerify={() => {
+            setVerifyJob(null);
+            nav.push('js-verify-dashboard');
+          }}
+        />
+      ) : null}
       <SeekerTabs active="js-saved" />
     </>
   );
@@ -557,6 +903,8 @@ export function Saved() {
 /** app/jobseeker/(tabs)/profile/index.tsx */
 export function Profile() {
   const nav = useNav();
+  const verified = useSeekerVerified();
+
   return (
     <>
       <div className="scroll" style={{ padding: '8px 20px 24px' }}>
@@ -575,9 +923,17 @@ export function Profile() {
           <div className="info">
             <div className="namerow">
               <strong>{seeker.name}</strong>
-              <span className="pill" style={{ background: 'rgba(22,163,74,0.18)', color: '#4ade80' }}>Verified</span>
+              {verified ? (
+                <span className="pill" style={{ background: 'rgba(22,163,74,0.18)', color: '#4ade80' }}>Verified</span>
+              ) : (
+                <span className="pill" style={{ background: 'rgba(245,158,11,0.16)', color: '#d97706' }}>Unverified</span>
+              )}
             </div>
-            <p className="trustline">Trust score: {seeker.trustScore} / 70+ for verified badge</p>
+            <p className="trustline">
+              {verified
+                ? `Trust score: ${seeker.trustScore} / 70+ for verified badge`
+                : 'Trust score: incomplete · verify to unlock remote US jobs'}
+            </p>
             <p className="bio">{seeker.bio}</p>
             <div className="row" style={{ gap: 4, marginTop: 8 }}>
               <MapPin size={14} color="var(--muted)" />
@@ -595,15 +951,27 @@ export function Profile() {
           </button>
         </div>
 
-        <button className="banner green" onClick={() => nav.push('js-trust-score')}>
-          <span className="title">
-            <ShieldCheck size={18} color="#16a34a" /> Verified candidate
-          </span>
-          <p>Your verified badge is active. Employers can see your trust score of {seeker.trustScore}.</p>
-          <span className="wm">
-            <ShieldCheck size={72} />
-          </span>
-        </button>
+        {verified ? (
+          <button className="banner green" onClick={() => nav.push('js-trust-score')}>
+            <span className="title">
+              <ShieldCheck size={18} color="#16a34a" /> Verified candidate
+            </span>
+            <p>Your verified badge is active. Employers can see your trust score of {seeker.trustScore}.</p>
+            <span className="wm">
+              <ShieldCheck size={72} />
+            </span>
+          </button>
+        ) : (
+          <button className="banner amber" onClick={() => nav.push('js-verify-dashboard')}>
+            <span className="title">
+              <ShieldAlert size={18} color="#d97706" /> Verify your profile
+            </span>
+            <p>Only verified users can apply to remote US partner jobs. Complete verification to unlock Apply Now.</p>
+            <span className="wm">
+              <ShieldAlert size={72} />
+            </span>
+          </button>
+        )}
 
         <div className="rows plain" style={{ marginTop: 24 }}>
           <MenuRow icon={FileText} tint="transparent" title="My applications" sub="3 active" to="js-applied" action="reset" />

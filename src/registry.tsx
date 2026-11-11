@@ -3,6 +3,8 @@ import type { ReactNode } from 'react';
 import * as auth from './screens/seekerAuth';
 import * as verify from './screens/seekerVerify';
 import * as app from './screens/seekerApp';
+import * as reels from './screens/reels';
+import * as report from './screens/reportPost';
 import * as onboard from './screens/employerOnboarding';
 import * as hr from './screens/employerApp';
 
@@ -217,6 +219,30 @@ export const jobseekerScreens: ScreenDef[] = [
     render: () => <app.Jobs />,
   },
   {
+    id: 'js-reels',
+    title: 'Posts',
+    source: 'app/jobseeker/(tabs)/reels.tsx',
+    caption: 'Short-form job videos with social actions and comments.',
+    group: 'Jobs',
+    render: () => <reels.Reels />,
+  },
+  {
+    id: 'js-report-post',
+    title: 'Report post',
+    source: 'app/jobseeker/posts/report.tsx',
+    caption: 'Report a post with reason chips, details, block and guidelines.',
+    group: 'Jobs',
+    render: () => <report.ReportPost />,
+  },
+  {
+    id: 'js-community-guidelines',
+    title: 'Community Guidelines',
+    source: 'app/jobseeker/posts/community-guidelines.tsx',
+    caption: 'Community rules for Posts content and reporting.',
+    group: 'Jobs',
+    render: () => <report.CommunityGuidelines />,
+  },
+  {
     id: 'js-job',
     title: 'Job',
     source: 'app/jobseeker/job/[id].tsx',
@@ -239,6 +265,14 @@ export const jobseekerScreens: ScreenDef[] = [
     caption: 'External application flow with trust score and profile attached.',
     group: 'Jobs',
     render: () => <app.ApplyNow />,
+  },
+  {
+    id: 'js-chrome-apply',
+    title: 'Chrome careers',
+    source: 'features/jobseeker/components/ChromeCareersApply.tsx',
+    caption: 'In-prototype Chrome browser for dummy external Apply Now applications.',
+    group: 'Jobs',
+    render: () => <app.ChromeCareersApply />,
   },
   {
     id: 'js-applied',

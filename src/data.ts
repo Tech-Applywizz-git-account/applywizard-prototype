@@ -57,6 +57,15 @@ export type JobModel = {
   about?: string;
   responsibilities?: string[];
   requirements?: string[];
+  /** US partner remote roles — visible to all, apply requires verification. */
+  remotePartner?: boolean;
+  openGlobally?: boolean;
+  confidential?: boolean;
+  schedule?: string;
+  payDetail?: string;
+  locationDetail?: string;
+  jobTypeDetail?: string;
+  descriptionBody?: string;
 };
 
 export const allJobs: JobModel[] = [
@@ -216,6 +225,72 @@ export const allJobs: JobModel[] = [
     applicationType: 'APPLY_NOW',
     applyUrl: 'https://www.novateksystems.com/careers',
   },
+  {
+    id: 'job-us-1',
+    title: 'Rust Architect / Backend Developer',
+    company: 'Confidential company',
+    initials: 'CC',
+    logoColor: '#db2777',
+    department: 'ENGG & TECH',
+    type: 'FULL-TIME',
+    experience: 'FRESHER',
+    location: 'GLOBAL',
+    salary: 'Salary not disclosed',
+    posted: '24 Oct',
+    match: 20,
+    applicationType: 'APPLY_NOW',
+    applyUrl: 'https://careers.example-us-partner.com/rust-architect',
+    mode: 'Remote',
+    remotePartner: true,
+    openGlobally: true,
+    confidential: true,
+    payDetail: '$50–$70/hour',
+    locationDetail: 'Global, fully remote',
+    jobTypeDetail: 'Contractor (~15 hours per week)',
+    schedule:
+      'Flexible—you can choose the hours and days you work, including weekends if desired (As long as you\'re active)',
+    about: 'Rust Architect / Backend Developer',
+    descriptionBody:
+      'We are looking for a highly skilled Rust Architect / Backend Developer to contribute to an AI-training project involving production Rust, backend architecture, asynchronous and concurrent systems, service design, infrastructure, and technical debugging. The role requires strong programming ability and the judgment to evaluate whether systems are correct, reliable, maintainable, and production-ready.',
+    requirements: [
+      'Strong production Rust experience',
+      'Backend architecture and service design',
+      'Async / concurrent systems expertise',
+      'Comfortable debugging complex distributed systems',
+    ],
+  },
+  {
+    id: 'job-us-2',
+    title: 'Senior Frontend Engineer',
+    company: 'Confidential company',
+    initials: 'CC',
+    logoColor: '#7c3aed',
+    department: 'ENGG & TECH',
+    type: 'FULL-TIME',
+    experience: '3-5 yrs',
+    location: 'GLOBAL',
+    salary: 'Salary not disclosed',
+    posted: '18 Oct',
+    match: 34,
+    applicationType: 'APPLY_NOW',
+    applyUrl: 'https://careers.example-us-partner.com/frontend',
+    mode: 'Remote',
+    remotePartner: true,
+    openGlobally: true,
+    confidential: true,
+    payDetail: '$45–$65/hour',
+    locationDetail: 'Global, fully remote',
+    jobTypeDetail: 'Contractor (~20 hours per week)',
+    schedule: 'Flexible schedule across US time zones',
+    about: 'Senior Frontend Engineer',
+    descriptionBody:
+      'Join a US-based product team building high-performance web interfaces. You will own React architecture, design systems, and accessibility for customer-facing products used worldwide.',
+    requirements: [
+      'Strong React and TypeScript',
+      'Design system experience',
+      'Remote collaboration across time zones',
+    ],
+  },
 ];
 
 export const job = allJobs[6];
@@ -260,7 +335,7 @@ export const pipelineStages = [
   'Phone screen',
   'Assessment',
   'Interview',
-  'Offer sent',
+  'Offer Sent',
   'Hired',
   'Rejected',
 ];
@@ -284,6 +359,52 @@ export const candidates = [
   { name: 'Rahul Verma', initials: 'RV', color: '#8b5cf6', role: 'Junior Accountant', match: 84, stage: 'Interview' },
   { name: 'Sneha Iyer', initials: 'SI', color: '#10b981', role: 'Accounts Executive', match: 78, stage: 'Under review' },
   { name: 'Imran Khan', initials: 'IK', color: '#f59e0b', role: 'Accounts Executive', match: 71, stage: 'Applied' },
+  { name: 'Priya Nair', initials: 'PN', color: '#0284c7', role: 'Junior Accountant', match: 88, stage: 'Phone screen' },
+  { name: 'Karthik Menon', initials: 'KM', color: '#db2777', role: 'Accounts Executive', match: 76, stage: 'Assessment' },
+  { name: 'Meera Joshi', initials: 'MJ', color: '#0d9488', role: 'Junior Accountant', match: 90, stage: 'Offer Sent' },
+  { name: 'Vikram Shah', initials: 'VS', color: '#16a34a', role: 'Accounts Executive', match: 86, stage: 'Hired' },
+  { name: 'Divya Reddy', initials: 'DR', color: '#dc2626', role: 'Junior Accountant', match: 62, stage: 'Rejected' },
+  { name: 'Arjun Patel', initials: 'AP', color: '#ea580c', role: 'Accounts Executive', match: 74, stage: 'Pending review' },
+  { name: 'Neha Kapoor', initials: 'NK', color: '#6366f1', role: 'Junior Accountant', match: 81, stage: 'Applied' },
+  { name: 'Rohan Das', initials: 'RD', color: '#0891b2', role: 'Accounts Executive', match: 69, stage: 'Applied' },
+  { name: 'Aisha Begum', initials: 'AB', color: '#7c3aed', role: 'Junior Accountant', match: 83, stage: 'Under review' },
+  { name: 'Sanjay Pillai', initials: 'SP', color: '#059669', role: 'Accounts Executive', match: 77, stage: 'Under review' },
+  { name: 'Lakshmi Devi', initials: 'LD', color: '#4f46e5', role: 'Junior Accountant', match: 91, stage: 'Shortlisted' },
+  { name: 'Farhan Ali', initials: 'FA', color: '#c026d3', role: 'Accounts Executive', match: 79, stage: 'Shortlisted' },
+  { name: 'Pooja Kulkarni', initials: 'PK', color: '#2563eb', role: 'Junior Accountant', match: 85, stage: 'Phone screen' },
+  { name: 'Nikhil Rao', initials: 'NR', color: '#ca8a04', role: 'Accounts Executive', match: 72, stage: 'Assessment' },
+  { name: 'Shreya Banerjee', initials: 'SB', color: '#0ea5e9', role: 'Junior Accountant', match: 87, stage: 'Interview' },
+  { name: 'Aditya Malhotra', initials: 'AM', color: '#14b8a6', role: 'Accounts Executive', match: 80, stage: 'Interview' },
+  { name: 'Kavya Krishnan', initials: 'KK', color: '#a855f7', role: 'Junior Accountant', match: 89, stage: 'Offer Sent' },
+  { name: 'Harshita Goud', initials: 'HG', color: '#ef4444', role: 'Accounts Executive', match: 58, stage: 'Rejected' },
+  { name: 'Mohit Agarwal', initials: 'MA', color: '#f97316', role: 'Junior Accountant', match: 70, stage: 'Pending review' },
+  { name: 'Tanvi Desai', initials: 'TD', color: '#22c55e', role: 'Accounts Executive', match: 82, stage: 'Pending review' },
+  { name: 'Yash Thakur', initials: 'YT', color: '#3b82f6', role: 'Junior Accountant', match: 75, stage: 'Applied' },
+  { name: 'Ishita Bose', initials: 'IB', color: '#ec4899', role: 'Accounts Executive', match: 73, stage: 'Applied' },
+  { name: 'Gaurav Singh', initials: 'GS', color: '#64748b', role: 'Junior Accountant', match: 68, stage: 'Under review' },
+  { name: 'Ritu Sharma', initials: 'RS', color: '#8b5cf6', role: 'Accounts Executive', match: 84, stage: 'Shortlisted' },
+  { name: 'Abhinav Gupta', initials: 'AG', color: '#06b6d4', role: 'Junior Accountant', match: 78, stage: 'Phone screen' },
+  { name: 'Sana Qureshi', initials: 'SQ', color: '#10b981', role: 'Accounts Executive', match: 81, stage: 'Assessment' },
+  { name: 'Deepak Nair', initials: 'DN', color: '#6366f1', role: 'Junior Accountant', match: 86, stage: 'Interview' },
+  { name: 'Anjali Menon', initials: 'AM', color: '#d97706', role: 'Accounts Executive', match: 77, stage: 'Pending review' },
+  { name: 'Varun Chopra', initials: 'VC', color: '#0d9488', role: 'Junior Accountant', match: 66, stage: 'Rejected' },
+  { name: 'Nisha Varghese', initials: 'NV', color: '#7c3aed', role: 'Accounts Executive', match: 88, stage: 'Hired' },
+  { name: 'Kiran Babu', initials: 'KB', color: '#2563eb', role: 'Junior Accountant', match: 74, stage: 'Applied' },
+  { name: 'Swathi Reddy', initials: 'SR', color: '#db2777', role: 'Accounts Executive', match: 79, stage: 'Under review' },
+  { name: 'Manish Tiwari', initials: 'MT', color: '#16a34a', role: 'Junior Accountant', match: 83, stage: 'Shortlisted' },
+  { name: 'Bhavna Sethi', initials: 'BS', color: '#0284c7', role: 'Accounts Executive', match: 76, stage: 'Phone screen' },
+  { name: 'Pranav Iyer', initials: 'PI', color: '#ea580c', role: 'Junior Accountant', match: 80, stage: 'Assessment' },
+  { name: 'Rekha Sinha', initials: 'RS', color: '#4f46e5', role: 'Accounts Executive', match: 85, stage: 'Interview' },
+  { name: 'Aman Gill', initials: 'AG', color: '#059669', role: 'Junior Accountant', match: 91, stage: 'Offer Sent' },
+  { name: 'Chitra Rao', initials: 'CR', color: '#c026d3', role: 'Accounts Executive', match: 72, stage: 'Pending review' },
+  { name: 'Siddharth Jain', initials: 'SJ', color: '#f59e0b', role: 'Junior Accountant', match: 67, stage: 'Rejected' },
+  { name: 'Pallavi Nair', initials: 'PN', color: '#0ea5e9', role: 'Accounts Executive', match: 81, stage: 'Applied' },
+  { name: 'Harish Kumar', initials: 'HK', color: '#8b5cf6', role: 'Junior Accountant', match: 78, stage: 'Under review' },
+  { name: 'Jyoti Pandey', initials: 'JP', color: '#14b8a6', role: 'Accounts Executive', match: 87, stage: 'Shortlisted' },
+  { name: 'Omkar Patil', initials: 'OP', color: '#2563eb', role: 'Junior Accountant', match: 75, stage: 'Phone screen' },
+  { name: 'Zara Sheikh', initials: 'ZS', color: '#a855f7', role: 'Accounts Executive', match: 82, stage: 'Assessment' },
+  { name: 'Ravi Teja', initials: 'RT', color: '#22c55e', role: 'Junior Accountant', match: 84, stage: 'Interview' },
+  { name: 'Megha Chauhan', initials: 'MC', color: '#ef4444', role: 'Accounts Executive', match: 70, stage: 'Pending review' },
 ];
 
 export const interviews = [
@@ -303,7 +424,11 @@ export const FILTER_CITIES = [
   'Adilabad',
   'Suryapet',
   'Siddipet',
+  'Remote',
+  'Global',
 ];
+
+export const FILTER_WORK_MODES = ['Remote', 'Hybrid', 'On-site'];
 
 export const FILTER_CATEGORIES = [
   'Finance',

@@ -6,6 +6,7 @@ import { NavProvider, useNav } from './nav';
 import { useTheme } from './theme';
 import { FiltersSheet, JobseekerDrawer } from './overlays';
 import { indexScreens, type ScreenDef } from './registry';
+import { setSeekerVerified, useSeekerVerified } from './seekerVerification';
 
 function StatusBar() {
   return (
@@ -66,6 +67,32 @@ function Phone({ screens }: { screens: Map<string, ScreenDef> }) {
   );
 }
 
+function VerificationToggle() {
+  const verified = useSeekerVerified();
+
+  return (
+    <div className="studio-verify" role="group" aria-label="Jobseeker verification state">
+      <span>Demo user</span>
+      <div className="studio-verify-switch">
+        <button
+          type="button"
+          className={verified ? '' : 'on'}
+          onClick={() => setSeekerVerified(false)}
+        >
+          Unverified
+        </button>
+        <button
+          type="button"
+          className={verified ? 'on' : ''}
+          onClick={() => setSeekerVerified(true)}
+        >
+          Verified
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function Walkthrough({
   story,
   list,
@@ -95,6 +122,7 @@ export function Walkthrough({
               Employer
             </Link>
           </nav>
+          {story === 'jobseeker' ? <VerificationToggle /> : null}
         </header>
         <main className="studio-main">
           <div className="device-slot" style={{ width: 390 * scale, height: 844 * scale }}>
