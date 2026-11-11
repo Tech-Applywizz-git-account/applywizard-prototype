@@ -82,8 +82,9 @@ function jobMatchesFilters(j: JobModel, query: string, filters: ReturnType<typeo
   if (filters.workModes.length) {
     const mode = (j.mode || (j.location.toUpperCase() === 'REMOTE' ? 'Remote' : 'On-site')).toLowerCase();
     const ok = filters.workModes.some((m) => {
-      if (m === 'Remote') return mode.includes('remote') || Boolean(j.remotePartner);
-      return mode.includes(m.toLowerCase());
+      // Remote filter is for US partner remote jobs only.
+      if (m === 'Remote') return Boolean(j.remotePartner);
+      return mode.includes(m.toLowerCase()) && !j.remotePartner;
     });
     if (!ok) return false;
   }
