@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Award, Check, FileText, IdCard, PartyPopper, ShieldCheck, Upload } from 'lucide-react';
 
 import {
@@ -11,6 +12,7 @@ import {
   TextLink,
 } from '../kit';
 import { useFetchedDigiDocs } from '../digilockerState';
+import { setSeekerVerified } from '../seekerVerification';
 import { VerifyStep } from './seekerAuth';
 import { educationLevels, seeker, suggestedSkills, trustBreakdown, verificationSteps } from '../data';
 import { useNav } from '../nav';
@@ -441,6 +443,10 @@ export function Milestone() {
 
 /** app/verification/all-set.tsx */
 export function AllSet() {
+  useEffect(() => {
+    setSeekerVerified(true);
+  }, []);
+
   return (
     <>
       <div className="center-screen">

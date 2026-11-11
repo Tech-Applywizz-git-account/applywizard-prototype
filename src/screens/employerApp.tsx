@@ -42,18 +42,45 @@ import {
   TextLink,
   Toggle,
 } from '../kit';
-import { candidates, employer, funnelColors, funnelCounts, interviews, job, pipelineStages } from '../data';
+import { employer, funnelColors, funnelCounts, interviews, job, pipelineStages } from '../data';
+import {
+  advanceCandidate,
+  nextStageFor,
+  setCandidateStage,
+  setSelectedCandidateId,
+  STAGE_FLOW,
+  useCandidates,
+  useSelectedCandidate,
+} from '../candidateState';
 import { useNav } from '../nav';
+import { useMemo, useState } from 'react';
 
 const stageTint: Record<string, { bg: string; color: string }> = {
   Applied: { bg: '#f1f5f9', color: '#475569' },
   'Under review': { bg: '#ccfbf1', color: '#0d9488' },
   Shortlisted: { bg: '#ede9fe', color: '#7c3aed' },
+  'Phone screen': { bg: '#e0e7ff', color: '#4338ca' },
+  Assessment: { bg: '#fef3c7', color: '#d97706' },
   Interview: { bg: '#dbeafe', color: '#2563eb' },
-  'Offer sent': { bg: '#dcfce7', color: '#16a34a' },
+  'Offer Sent': { bg: '#dcfce7', color: '#16a34a' },
   Hired: { bg: '#d1fae5', color: '#065f46' },
   Rejected: { bg: '#fee2e2', color: '#dc2626' },
+  'Pending review': { bg: '#ffedd5', color: '#c2410c' },
 };
+
+const CANDIDATE_FILTERS = [
+  'All',
+  'Applied',
+  'Under review',
+  'Shortlisted',
+  'Phone screen',
+  'Assessment',
+  'Interview',
+  'Offer Sent',
+  'Hired',
+  'Rejected',
+  'Pending review',
+] as const;
 
 function HrHeader() {
   const nav = useNav();
@@ -186,8 +213,70 @@ export function HrHome() {
 }
 
 /** components/hr-screens/JobsTab.tsx */
+const JOB_FILTERS = ['All', 'Active', 'Slow', 'Urgent', 'Paused', 'Expired'] as const;
+
+const hrJobList = [
+  {
+    id: 'hr-job-1',
+    title: job.title,
+    meta: `${employer.company} · ${job.location} · ${job.salary}`,
+    status: 'Active' as const,
+    statusColor: '#22c55e',
+    applied: 42,
+    shortlist: 9,
+    interview: 3,
+    offer: 2,
+    progress: '62%',
+    progressColor: '#3b82f6',
+    pill: { label: 'Good', bg: '#f5f3ff', color: '#0891b2' },
+  },
+  {
+    id: 'hr-job-2',
+    title: 'Accounts Executive',
+    meta: `${employer.company} · Secunderabad · ₹22,000/mo`,
+    status: 'Slow' as const,
+    statusColor: '#f59e0b',
+    applied: 8,
+    shortlist: 2,
+    interview: 1,
+    offer: 0,
+    progress: '18%',
+    progressColor: '#f59e0b',
+    pill: { label: 'Slow', bg: '#fef3c7', color: '#f59e0b' },
+  },
+];
+
 export function HrJobs() {
   const nav = useNav();
+  const [filter, setFilter] = useState<(typeof JOB_FILTERS)[number]>('All');
+  const [query, setQuery] = useState('');
+
+  const counts = useMemo(() => {
+    const map: Record<string, number> = { All: hrJobList.length };
+    for (const status of JOB_FILTERS) {
+      if (status === 'All') continue;
+      map[status] = hrJobList.filter((j) => j.status === status).length;
+    }
+    return map;
+  }, []);
+
+  const chipItems = JOB_FILTERS.map((status) =>
+    status === 'All' ? `All (${counts.All})` : `${status} (${counts[status] ?? 0})`
+  );
+
+  const selectedChip =
+    chipItems.find((item) => (filter === 'All' ? item.startsWith('All (') : item.startsWith(`${filter} (`))) ??
+    chipItems[0];
+
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return hrJobList.filter((item) => {
+      if (filter !== 'All' && item.status !== filter) return false;
+      if (!q) return true;
+      return item.title.toLowerCase().includes(q) || item.meta.toLowerCase().includes(q);
+    });
+  }, [filter, query]);
+
   return (
     <>
       <div className="appbar" style={{ padding: '16px 20px' }}>
@@ -197,83 +286,70 @@ export function HrJobs() {
         </button>
       </div>
       <div className="scroll pad">
-        <SearchBox placeholder="Search by role, department..." band={false} />
-        <Chips items={['All 2', 'Active', 'Slow', 'Urgent', 'Paused', 'Expired']} selected={['All 2']} scroll />
+        <SearchBox
+          placeholder="Search by role, department..."
+          band={false}
+          value={query}
+          onChange={setQuery}
+        />
+        <Chips
+          items={chipItems}
+          selected={[selectedChip]}
+          scroll
+          onSelect={(item) => {
+            const match = JOB_FILTERS.find((status) =>
+              status === 'All' ? item.startsWith('All (') : item.startsWith(`${status} (`)
+            );
+            if (match) setFilter(match);
+          }}
+        />
         <div style={{ height: 16 }} />
 
-        <button className="hrjob" onClick={() => nav.push('hr-job')}>
-          <span className="head">
-            <span style={{ flex: 1 }}>
-              <strong>{job.title}</strong>
-              <em>
-                {employer.company} · {job.location} · {job.salary}
-              </em>
-            </span>
-            <span className="status" style={{ color: '#22c55e' }}>
-              <i /> Active
-            </span>
-          </span>
-          <span className="minigrid">
-            <div>
-              <b>42</b>
-              <span>Applied</span>
-            </div>
-            <div>
-              <b>9</b>
-              <span>Shortlist</span>
-            </div>
-            <div>
-              <b>3</b>
-              <span>Interview</span>
-            </div>
-            <div>
-              <b>2</b>
-              <span>Offer</span>
-            </div>
-          </span>
-          <span className="row" style={{ gap: 10 }}>
-            <span className="progress">
-              <i style={{ width: '62%', background: '#3b82f6' }} />
-            </span>
-            <span className="pill" style={{ background: '#f5f3ff', color: '#0891b2' }}>Good</span>
-          </span>
-        </button>
-
-        <button className="hrjob" onClick={() => nav.push('hr-job')}>
-          <span className="head">
-            <span style={{ flex: 1 }}>
-              <strong>Accounts Executive</strong>
-              <em>{employer.company} · Secunderabad · ₹22,000/mo</em>
-            </span>
-            <span className="status" style={{ color: '#f59e0b' }}>
-              <i /> Slow
-            </span>
-          </span>
-          <span className="minigrid">
-            <div>
-              <b>8</b>
-              <span>Applied</span>
-            </div>
-            <div>
-              <b>2</b>
-              <span>Shortlist</span>
-            </div>
-            <div>
-              <b>1</b>
-              <span>Interview</span>
-            </div>
-            <div>
-              <b>0</b>
-              <span>Offer</span>
-            </div>
-          </span>
-          <span className="row" style={{ gap: 10 }}>
-            <span className="progress">
-              <i style={{ width: '18%', background: '#f59e0b' }} />
-            </span>
-            <span className="pill" style={{ background: '#fef3c7', color: '#f59e0b' }}>Slow</span>
-          </span>
-        </button>
+        {visible.length === 0 ? (
+          <p className="muted" style={{ textAlign: 'center', padding: '32px 12px' }}>
+            No jobs in this filter.
+          </p>
+        ) : (
+          visible.map((item) => (
+            <button key={item.id} className="hrjob" onClick={() => nav.push('hr-job')}>
+              <span className="head">
+                <span style={{ flex: 1 }}>
+                  <strong>{item.title}</strong>
+                  <em>{item.meta}</em>
+                </span>
+                <span className="status" style={{ color: item.statusColor }}>
+                  <i /> {item.status}
+                </span>
+              </span>
+              <span className="minigrid">
+                <div>
+                  <b>{item.applied}</b>
+                  <span>Applied</span>
+                </div>
+                <div>
+                  <b>{item.shortlist}</b>
+                  <span>Shortlist</span>
+                </div>
+                <div>
+                  <b>{item.interview}</b>
+                  <span>Interview</span>
+                </div>
+                <div>
+                  <b>{item.offer}</b>
+                  <span>Offer</span>
+                </div>
+              </span>
+              <span className="row" style={{ gap: 10 }}>
+                <span className="progress">
+                  <i style={{ width: item.progress, background: item.progressColor }} />
+                </span>
+                <span className="pill" style={{ background: item.pill.bg, color: item.pill.color }}>
+                  {item.pill.label}
+                </span>
+              </span>
+            </button>
+          ))
+        )}
       </div>
       <HrTabs active="hr-jobs" />
     </>
@@ -283,6 +359,40 @@ export function HrJobs() {
 /** components/hr-screens/CandidatesTab.tsx */
 export function HrCandidates() {
   const nav = useNav();
+  const candidates = useCandidates();
+  const [filter, setFilter] = useState<(typeof CANDIDATE_FILTERS)[number]>('All');
+  const [query, setQuery] = useState('');
+
+  const counts = useMemo(() => {
+    const map: Record<string, number> = { All: candidates.length };
+    for (const stage of CANDIDATE_FILTERS) {
+      if (stage === 'All') continue;
+      map[stage] = candidates.filter((c) => c.stage === stage).length;
+    }
+    return map;
+  }, [candidates]);
+
+  const chipItems = CANDIDATE_FILTERS.map((stage) =>
+    stage === 'All' ? `All (${counts.All})` : `${stage} (${counts[stage] ?? 0})`
+  );
+
+  const selectedChip =
+    chipItems.find((item) => (filter === 'All' ? item.startsWith('All (') : item.startsWith(`${filter} (`))) ??
+    chipItems[0];
+
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return candidates.filter((person) => {
+      if (filter !== 'All' && person.stage !== filter) return false;
+      if (!q) return true;
+      return (
+        person.name.toLowerCase().includes(q) ||
+        person.role.toLowerCase().includes(q) ||
+        person.stage.toLowerCase().includes(q)
+      );
+    });
+  }, [candidates, filter, query]);
+
   return (
     <>
       <div className="appbar" style={{ padding: '16px 20px' }}>
@@ -292,32 +402,61 @@ export function HrCandidates() {
         </button>
       </div>
       <div className="scroll pad">
-        <SearchBox placeholder="Search name, role, skill..." band={false} />
-        <Chips items={['All 50', 'Pending review', 'Shortlisted', 'Interview', 'Offer sent', 'Hired']} selected={['All 50']} scroll />
+        <SearchBox
+          placeholder="Search name, role, skill..."
+          band={false}
+          value={query}
+          onChange={setQuery}
+        />
+        <Chips
+          items={chipItems}
+          selected={[selectedChip]}
+          scroll
+          onSelect={(item) => {
+            const match = CANDIDATE_FILTERS.find((stage) =>
+              stage === 'All' ? item.startsWith('All (') : item.startsWith(`${stage} (`)
+            );
+            if (match) setFilter(match);
+          }}
+        />
         <div style={{ height: 16 }} />
-        {candidates.map((person) => {
-          const tint = stageTint[person.stage] ?? stageTint.Applied;
-          return (
-            <button key={person.name} className="card" style={{ width: '100%', marginBottom: 12 }} onClick={() => nav.push('hr-candidate')}>
-              <span className="row" style={{ gap: 12 }}>
-                <Avatar initials={person.initials} color={person.color} size={44} />
-                <span style={{ flex: 1 }}>
-                  <strong style={{ display: 'block', fontSize: 15, fontWeight: 700 }}>{person.name}</strong>
-                  <span className="muted">{person.role}</span>
+        {visible.length === 0 ? (
+          <p className="muted" style={{ textAlign: 'center', padding: '32px 12px' }}>
+            No candidates in this filter.
+          </p>
+        ) : (
+          visible.map((person) => {
+            const tint = stageTint[person.stage] ?? stageTint.Applied;
+            return (
+              <button
+                key={person.id}
+                className="card"
+                style={{ width: '100%', marginBottom: 12 }}
+                onClick={() => {
+                  setSelectedCandidateId(person.id);
+                  nav.push('hr-candidate');
+                }}
+              >
+                <span className="row" style={{ gap: 12 }}>
+                  <Avatar initials={person.initials} color={person.color} size={44} />
+                  <span style={{ flex: 1 }}>
+                    <strong style={{ display: 'block', fontSize: 15, fontWeight: 700 }}>{person.name}</strong>
+                    <span className="muted">{person.role}</span>
+                  </span>
+                  <span className="match">
+                    <Sparkles size={12} /> {person.match}%
+                  </span>
                 </span>
-                <span className="match">
-                  <Sparkles size={12} /> {person.match}%
+                <span className="row between" style={{ marginTop: 12 }}>
+                  <span className="pill" style={{ background: tint.bg, color: tint.color }}>
+                    {person.stage}
+                  </span>
+                  <ChevronRight size={18} color="var(--muted)" />
                 </span>
-              </span>
-              <span className="row between" style={{ marginTop: 12 }}>
-                <span className="pill" style={{ background: tint.bg, color: tint.color }}>
-                  {person.stage}
-                </span>
-                <ChevronRight size={18} color="var(--muted)" />
-              </span>
-            </button>
-          );
-        })}
+              </button>
+            );
+          })
+        )}
       </div>
       <HrTabs active="hr-candidates" />
     </>
@@ -416,6 +555,7 @@ export function HrMore() {
 /** app/hr-screens/job/[id].tsx */
 export function HrJob() {
   const nav = useNav();
+  const candidates = useCandidates();
   return (
     <>
       <AppBar title="Job" back right={<button className="iconbtn" onClick={() => nav.push('hr-job-details')}><Settings size={20} /></button>} />
@@ -462,7 +602,15 @@ export function HrJob() {
         {candidates.slice(0, 3).map((person) => {
           const tint = stageTint[person.stage] ?? stageTint.Applied;
           return (
-            <button key={person.name} className="card" style={{ width: '100%', marginBottom: 12 }} onClick={() => nav.push('hr-candidate')}>
+            <button
+              key={person.id}
+              className="card"
+              style={{ width: '100%', marginBottom: 12 }}
+              onClick={() => {
+                setSelectedCandidateId(person.id);
+                nav.push('hr-candidate');
+              }}
+            >
               <span className="row" style={{ gap: 12 }}>
                 <Avatar initials={person.initials} color={person.color} size={42} />
                 <span style={{ flex: 1 }}>
@@ -517,47 +665,116 @@ export function HrJobDetails() {
 
 /** app/hr-screens/candidate/[id].tsx */
 export function HrCandidate() {
+  const person = useSelectedCandidate();
+  const [toast, setToast] = useState('');
+  const tint = stageTint[person.stage] ?? stageTint.Applied;
+  const nextStage = nextStageFor(person.stage);
+  const currentIndex = STAGE_FLOW.indexOf(person.stage as (typeof STAGE_FLOW)[number]);
+
+  const showToast = (message: string) => {
+    setToast(message);
+    window.setTimeout(() => setToast(''), 2200);
+  };
+
+  const moveNext = () => {
+    const result = advanceCandidate(person.id);
+    if (!result.ok) {
+      showToast(result.error);
+      return;
+    }
+    showToast(`Moved to ${result.stage}`);
+  };
+
+  const moveTo = (stage: string) => {
+    if (stage === person.stage) return;
+    setCandidateStage(person.id, stage);
+    showToast(`Moved to ${stage}`);
+  };
+
+  const reject = () => {
+    setCandidateStage(person.id, 'Rejected');
+    showToast('Candidate rejected');
+  };
+
   return (
     <>
       <AppBar title="Candidate" back />
       <div className="scroll pad">
+        {toast ? (
+          <div
+            style={{
+              background: '#e6f4ea',
+              border: '1px solid #a7f3d0',
+              borderLeft: '5px solid #059669',
+              borderRadius: 14,
+              padding: '12px 14px',
+              marginBottom: 14,
+            }}
+          >
+            <p style={{ margin: 0, color: '#047857', fontWeight: 600, fontSize: 13 }}>{toast}</p>
+          </div>
+        ) : null}
+
         <div className="card">
           <div className="row" style={{ gap: 14 }}>
-            <Avatar initials="AR" color="#4432ff" size={58} />
+            <Avatar initials={person.initials} color={person.color} size={58} />
             <div style={{ flex: 1 }}>
               <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-                <strong style={{ fontSize: 18, fontWeight: 800 }}>Ananya Rao</strong>
+                <strong style={{ fontSize: 18, fontWeight: 800 }}>{person.name}</strong>
                 <span className="pill" style={{ background: '#dcfce7', color: '#15803d' }}>
                   <BadgeCheck size={12} /> Verified 78
                 </span>
               </div>
               <p className="muted" style={{ margin: '4px 0 0' }}>
-                {job.title} · Applied 2 days ago
+                {person.role} · Applied recently
               </p>
             </div>
           </div>
           <div className="row between" style={{ marginTop: 14 }}>
             <span className="match">
-              <Sparkles size={12} /> 92% MATCH
+              <Sparkles size={12} /> {person.match}% MATCH
             </span>
-            <span className="pill" style={{ background: '#ede9fe', color: '#7c3aed' }}>Shortlisted</span>
+            <span className="pill" style={{ background: tint.bg, color: tint.color }}>
+              {person.stage}
+            </span>
           </div>
         </div>
 
         <p className="label-xs">Move to stage</p>
         <div className="stage-track">
-          {pipelineStages.slice(0, 7).map((stage, index) => (
-            <div key={stage} className={index <= 2 ? 'on' : ''}>
+          {STAGE_FLOW.map((stage, index) => (
+            <button
+              key={stage}
+              type="button"
+              className={
+                person.stage === stage
+                  ? 'on current'
+                  : currentIndex >= 0 && index <= currentIndex
+                    ? 'on'
+                    : ''
+              }
+              onClick={() => moveTo(stage)}
+            >
               {stage}
-            </div>
+            </button>
           ))}
+          <button
+            type="button"
+            className={person.stage === 'Rejected' ? 'on current reject' : 'reject'}
+            onClick={reject}
+          >
+            Rejected
+          </button>
         </div>
+        <p className="muted" style={{ fontSize: 12, margin: '8px 0 0' }}>
+          Tap a stage to move this candidate, or use Move to next stage below.
+        </p>
 
         <p className="label-xs">Details</p>
         <div className="card">
           <div className="kv">
             <span>Email</span>
-            <b>ananya@example.com</b>
+            <b>{person.name.toLowerCase().replace(/\s+/g, '.')}@example.com</b>
           </div>
           <div className="kv">
             <span>Phone</span>
@@ -581,7 +798,7 @@ export function HrCandidate() {
           </div>
         </div>
 
-        <p className="label-xs">Why this is a 92% match</p>
+        <p className="label-xs">Why this is a {person.match}% match</p>
         <div className="card">
           {[
             ['Tally Prime', 'Required'],
@@ -611,9 +828,13 @@ export function HrCandidate() {
         </div>
       </div>
       <FootBar>
-        <div className="two">
-          <button className="btn outline">Reject</button>
-          <button className="btn">Schedule interview</button>
+        <div className="two stage-actions">
+          <button className="btn outline" type="button" onClick={reject} disabled={person.stage === 'Rejected'}>
+            Reject
+          </button>
+          <button className="btn" type="button" onClick={moveNext} disabled={!nextStage}>
+            {nextStage ? `Move to ${nextStage}` : 'Final stage'}
+          </button>
         </div>
       </FootBar>
     </>
@@ -682,6 +903,7 @@ export function HrCompany() {
 /** PipelineTab.tsx */
 export function HrPipeline() {
   const nav = useNav();
+  const candidates = useCandidates();
   return (
     <>
       <AppBar title="Pipeline" back />
@@ -690,20 +912,28 @@ export function HrPipeline() {
         <div style={{ height: 16 }} />
         {pipelineStages.slice(0, 7).map((stage, index) => {
           const tint = stageTint[stage] ?? stageTint.Applied;
+          const sample = candidates.find((c) => c.stage === stage) ?? candidates[index];
           return (
             <div key={stage} className="card" style={{ marginBottom: 12 }}>
               <div className="row between">
                 <span className="pill" style={{ background: tint.bg, color: tint.color }}>
                   {stage}
                 </span>
-                <b style={{ fontSize: 15 }}>{funnelCounts[index]}</b>
+                <b style={{ fontSize: 15 }}>{candidates.filter((c) => c.stage === stage).length}</b>
               </div>
-              {index <= 2 ? (
-                <button className="row" style={{ gap: 12, width: '100%', marginTop: 12 }} onClick={() => nav.push('hr-candidate')}>
-                  <Avatar initials={candidates[index].initials} color={candidates[index].color} size={36} />
+              {sample && index <= 2 ? (
+                <button
+                  className="row"
+                  style={{ gap: 12, width: '100%', marginTop: 12 }}
+                  onClick={() => {
+                    setSelectedCandidateId(sample.id);
+                    nav.push('hr-candidate');
+                  }}
+                >
+                  <Avatar initials={sample.initials} color={sample.color} size={36} />
                   <span style={{ flex: 1 }}>
-                    <strong style={{ display: 'block', fontSize: 14 }}>{candidates[index].name}</strong>
-                    <span className="muted">{candidates[index].role}</span>
+                    <strong style={{ display: 'block', fontSize: 14 }}>{sample.name}</strong>
+                    <span className="muted">{sample.role}</span>
                   </span>
                   <ChevronRight size={18} color="var(--muted)" />
                 </button>

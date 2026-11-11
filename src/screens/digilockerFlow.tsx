@@ -19,6 +19,7 @@ import {
   type DigiDocId,
 } from '../digilockerState';
 import { useNav } from '../nav';
+import { setSeekerVerified } from '../seekerVerification';
 
 type Step =
   | 'connecting'
@@ -548,7 +549,14 @@ export function DigiLockerFlow() {
           </div>
           <h1 className="dl2-h1 center">Account verified</h1>
           <p className="dl2-sub center">Your DigiLocker account is connected.</p>
-          <button type="button" className="dl2-btn purple" onClick={() => setStep('consent')}>
+          <button
+            type="button"
+            className="dl2-btn purple"
+            onClick={() => {
+              setSeekerVerified(true);
+              setStep('consent');
+            }}
+          >
             Continue
           </button>
         </div>

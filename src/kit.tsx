@@ -7,11 +7,13 @@ import {
   Calendar,
   Check,
   ChevronRight,
+  Clapperboard,
   FileText,
   Filter,
   LayoutGrid,
   MapPin,
   Menu,
+  Globe,
   Search,
   Sparkles,
   UserCircle2,
@@ -175,6 +177,7 @@ export function SeekerTabs({ active, locked }: { active: string; locked?: boolea
   const { t } = useLanguage();
   const tabs = [
     { id: 'js-jobs', label: t('allJobs'), Icon: Briefcase },
+    { id: 'js-reels', label: t('posts'), Icon: Clapperboard },
     { id: 'js-applied', label: t('applied'), Icon: FileText },
     { id: 'js-saved', label: t('saved'), Icon: Bookmark },
     { id: 'js-profile', label: t('profile'), Icon: UserCircle2 },
@@ -506,6 +509,9 @@ export type CardJob = {
   match: number;
   applicationType?: 'QUICK_APPLY' | 'APPLY_NOW' | string;
   applyUrl?: string;
+  remotePartner?: boolean;
+  openGlobally?: boolean;
+  mode?: string;
 };
 
 /** JobCard.tsx getJobTitleTypography — the title shrinks as it gets longer. */
@@ -568,9 +574,23 @@ export function JobCard({
           </div>
         </div>
         <div className="tags">
-          <span className="tag dept">{job.department}</span>
-          <span className="tag">{job.type}</span>
-          <span className="tag">{job.experience}</span>
+          {job.remotePartner ? (
+            <>
+              <span className="tag">{job.type}</span>
+              <span className="tag">{job.experience}</span>
+              {job.openGlobally ? (
+                <span className="tag open-global">
+                  <Globe size={11} /> Open globally
+                </span>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <span className="tag dept">{job.department}</span>
+              <span className="tag">{job.type}</span>
+              <span className="tag">{job.experience}</span>
+            </>
+          )}
         </div>
         <div className="loc">
           <span className="tag">

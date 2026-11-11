@@ -1,7 +1,15 @@
-import { Bookmark, Briefcase, Check, FileText, LogOut, Sparkles, X } from 'lucide-react';
+import { Bookmark, Briefcase, Check, Clapperboard, FileText, Sparkles, X } from 'lucide-react';
 import { useState } from 'react';
 
-import { FILTER_CATEGORIES, FILTER_CITIES, FILTER_DATE_POSTED, FILTER_EMPLOYMENT_TYPES, FILTER_EXPERIENCE } from './data';
+import {
+  FILTER_CATEGORIES,
+  FILTER_CITIES,
+  FILTER_DATE_POSTED,
+  FILTER_EMPLOYMENT_TYPES,
+  FILTER_EXPERIENCE,
+  FILTER_WORK_MODES,
+} from './data';
+import { clearJobFilters, getJobFilters, setJobFilters } from './filterState';
 import { useNav } from './nav';
 
 function toggle(list: string[], value: string) {
@@ -41,12 +49,14 @@ function ChipRow({
 /** features/jobseeker/components/FiltersModal.tsx */
 export function FiltersSheet() {
   const nav = useNav();
-  const [cities, setCities] = useState(['Hyderabad']);
-  const [categories, setCategories] = useState(['Finance']);
-  const [experience, setExperience] = useState(['0-1 yrs']);
-  const [types, setTypes] = useState(['Full-time']);
-  const [appType, setAppType] = useState('All');
-  const [datePosted, setDatePosted] = useState<string | null>(null);
+  const initial = getJobFilters();
+  const [cities, setCities] = useState(initial.cities);
+  const [categories, setCategories] = useState(initial.categories);
+  const [experience, setExperience] = useState(initial.experience);
+  const [types, setTypes] = useState(initial.types);
+  const [workModes, setWorkModes] = useState(initial.workModes);
+  const [appType, setAppType] = useState(initial.appType);
+  const [datePosted, setDatePosted] = useState<string | null>(initial.datePosted);
 
   return (
     <div className="overlay">
@@ -90,6 +100,12 @@ export function FiltersSheet() {
               ))}
             </div>
           </div>
+          <ChipRow
+            title="WORK MODE"
+            options={FILTER_WORK_MODES}
+            selected={workModes}
+            onToggle={(value) => setWorkModes(toggle(workModes, value))}
+          />
           <ChipRow title="CITY" options={FILTER_CITIES} selected={cities} onToggle={(value) => setCities(toggle(cities, value))} />
           <ChipRow
             title="CATEGORY"
@@ -119,12 +135,31 @@ export function FiltersSheet() {
               setCategories([]);
               setExperience([]);
               setTypes([]);
+              setWorkModes([]);
+              setAppType('All');
               setDatePosted(null);
+              clearJobFilters();
             }}
           >
             Clear all
           </button>
-          <button className="btn sm" type="button" style={{ flex: 1 }} onClick={nav.close}>
+          <button
+            className="btn sm"
+            type="button"
+            style={{ flex: 1 }}
+            onClick={() => {
+              setJobFilters({
+                cities,
+                categories,
+                experience,
+                types,
+                workModes,
+                appType,
+                datePosted,
+              });
+              nav.close();
+            }}
+          >
             Apply filters
           </button>
         </div>
@@ -138,6 +173,7 @@ export function JobseekerDrawer() {
   const nav = useNav();
   const items = [
     { title: 'All jobs', subtitle: 'Browse everything', Icon: Briefcase, to: 'js-jobs' },
+    { title: 'Posts', subtitle: 'Watch short videos', Icon: Clapperboard, to: 'js-reels' },
     { title: 'Find a job', subtitle: 'Quick Apply', Icon: Sparkles, to: 'js-jobs' },
     { title: 'Saved', subtitle: 'Jobs you bookmarked', Icon: Bookmark, to: 'js-saved' },
     { title: 'My applications', subtitle: 'Track your applications', Icon: FileText, to: 'js-applied' },
@@ -174,14 +210,10 @@ export function JobseekerDrawer() {
                 <strong>{item.title}</strong>
                 <em>{item.subtitle}</em>
               </span>
-              {index === 0 ? <Check size={18} color="#4432ff" /> : null}
+              {index === 0 ? <Check size={16} color="#4432ff" /> : null}
             </button>
           ))}
         </div>
-        <button className="logout-row" type="button" onClick={() => nav.reset('js-login')}>
-          <LogOut size={20} color="#ef4444" />
-          Log out
-        </button>
       </aside>
     </div>
   );
