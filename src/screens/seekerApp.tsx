@@ -104,7 +104,14 @@ function jobMatchesFilters(j: JobModel, query: string, filters: ReturnType<typeo
 
   if (filters.types.length) {
     const type = j.type.toLowerCase().replace(/[-\s]/g, '');
-    const ok = filters.types.some((t) => type.includes(t.toLowerCase().replace(/[-\s]/g, '')));
+    const ok = filters.types.some((t) => {
+      const normalized = t.toLowerCase().replace(/[-\s]/g, '');
+      // Contract employment type surfaces Open globally / US partner roles.
+      if (normalized === 'contract') {
+        return type.includes('contract') || Boolean(j.openGlobally) || Boolean(j.remotePartner);
+      }
+      return type.includes(normalized);
+    });
     if (!ok) return false;
   }
 
@@ -271,10 +278,14 @@ export function Jobs() {
           onSaved={() => nav.reset('js-saved')}
           onRecent={() => nav.open('filters')}
         />
-        {filters.workModes.includes('Remote') ? (
+        {filters.workModes.includes('Remote') || filters.types.includes('Contract') ? (
           <div className="remote-filter-banner">
             <Globe size={16} color="#0f766e" />
-            <span>Showing remote US partner jobs. Verification is required to apply.</span>
+            <span>
+              {filters.types.includes('Contract') && !filters.workModes.includes('Remote')
+                ? 'Showing Open globally contract roles. Verification is required to apply.'
+                : 'Showing remote US partner jobs. Verification is required to apply.'}
+            </span>
           </div>
         ) : null}
         <div className="pad" style={{ paddingTop: 0 }}>
